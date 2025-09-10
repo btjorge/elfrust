@@ -1,0 +1,11 @@
+[package]
+name = "elfrust"
+version = "0.1.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+strum_macros = "0.27.2"
+
+[dev-dependencies]
+snapbox = "1.2.2"
