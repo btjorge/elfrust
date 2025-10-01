@@ -167,7 +167,7 @@ struct ElfHeader {
 
 #[derive(Debug)]
 #[repr(C)]
-struct ElfProgHeader {
+struct ElfProgHeaderRaw {
     p_type:   Word,
     p_flags:  Word,
     p_offset: Off,
@@ -193,7 +193,7 @@ struct ElfSectionHeader {
     sh_entsize:   Xword,
 }
 
-const_assert!(size_of::<ElfProgHeader>() % align_of::<ElfProgHeader>() == 0);
+const_assert!(size_of::<ElfProgHeaderRaw>() % align_of::<ElfProgHeaderRaw>() == 0);
 
 impl ElfHeader {
     fn parse(buf: &[u8; size_of::<Self>()]) -> Self {
@@ -201,20 +201,112 @@ impl ElfHeader {
             std::mem::transmute_copy(buf)
         };
 
-        assert_eq!(usize::from(ret.e_phentsize), size_of::<ElfProgHeader>());
+        assert_eq!(usize::from(ret.e_phentsize), size_of::<ElfProgHeaderRaw>());
         assert_eq!(usize::from(ret.e_shentsize), size_of::<ElfSectionHeader>());
 
         ret
     }
 }
 
-impl ElfProgHeader {
+impl ElfProgHeaderRaw {
     fn parse(buf: &[u8; size_of::<Self>()]) -> Self {
         unsafe {
             std::mem::transmute_copy(buf)
         }
     }
 }
+
+#[allow(non_camel_case_types)]
+#[derive(Debug)]
+enum SegmentType {
+    PT_NULL,
+    PT_LOAD,
+    PT_DYNAMIC,
+    PT_INTERP,
+    PT_NOTE,
+    PT_SHLIB,
+    PT_PHDR,
+    PT_TLS,
+    PT_OS(Word),
+    PT_PROC(Word),
+}
+
+impl SegmentType {
+    const PT_LOOS   : Word = 0x60000000;
+    const PT_HIOS   : Word = 0x6fffffff;
+    const PT_LOPROC : Word = 0x70000000;
+    const PT_HIPROC : Word = 0x7fffffff;
+
+    fn of_word(n: Word) -> SegmentType {
+        match n {
+            0 => SegmentType::PT_NULL,
+            1 => SegmentType::PT_LOAD,
+            2 => SegmentType::PT_DYNAMIC,
+            3 => SegmentType::PT_INTERP,
+            4 => SegmentType::PT_NOTE,
+            5 => SegmentType::PT_SHLIB,
+            6 => SegmentType::PT_PHDR,
+            7 => SegmentType::PT_TLS,
+            Self::PT_LOOS..=Self::PT_HIOS => SegmentType::PT_OS(n),
+            Self::PT_LOPROC..=Self::PT_HIPROC => SegmentType::PT_PROC(n),
+            _ => panic!("invalid segment type"),
+        }
+    }
+}
+
+use bitflags::{bitflags, parser};
+
+bitflags! {
+    struct SegmentFlags: Word {
+        const PF_X = 0x1;
+        const PF_W = 0x2;
+        const PF_R = 0x4;
+    }
+}
+
+struct ElfProgHeader {
+    p_type:   SegmentType,
+    p_flags:  SegmentFlags,
+    p_offset: Off,
+    p_vaddr:  Addr,
+    p_paddr:  Addr,
+    p_filesz: Xword,
+    p_memsz:  Xword,
+    p_align:  Xword,
+}
+
+impl ElfProgHeader {
+    fn of_raw(r: ElfProgHeaderRaw) -> Option<ElfProgHeader> {
+        Some(
+            ElfProgHeader {
+                p_type: SegmentType::of_word(r.p_type),
+                p_flags: SegmentFlags::from_bits(r.p_flags)?,
+                p_offset: r.p_offset,
+                p_vaddr:  r.p_vaddr,
+                p_paddr:  r.p_paddr,
+                p_filesz: r.p_filesz,
+                p_memsz:  r.p_memsz,
+                p_align:  r.p_align,
+            }
+        )
+    }
+}
+
+impl Display for ElfProgHeader {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        writeln!(f, "type:   {:?}", self.p_type)?;
+        write!(f, "flags:  ")?;
+        parser::to_writer(&self.p_flags, &mut *f)?;
+        writeln!(f, "")?;
+        writeln!(f, "offset: {:?}", self.p_offset)?;
+        writeln!(f, "vaddr:  {:?}", self.p_vaddr)?;
+        writeln!(f, "paddr:  {:?}", self.p_paddr)?;
+        writeln!(f, "filesz: {:?}", self.p_filesz)?;
+        writeln!(f, "memsz:  {:?}", self.p_memsz)?;
+        writeln!(f, "align:  {:?}", self.p_align)
+    }
+}
+
 
 struct ElfFile {
     ident: EIdent,
@@ -316,13 +408,13 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         f.file.seek(SeekFrom::Start(f.header.e_phoff))?;
 
-        let mut buf = [0; size_of::<ElfProgHeader>()];
+        let mut buf = [0; size_of::<ElfProgHeaderRaw>()];
 
         /* good if the right align-size equation holds (see above) */
         for _ in 0..f.header.e_phnum {
             f.file.read_exact(&mut buf)?;
-            let pheader = ElfProgHeader::parse(&buf);
-            println!("{:?}", pheader)
+            let pheader = ElfProgHeader::of_raw(ElfProgHeaderRaw::parse(&buf)).ok_or("error")?;
+            println!("{}", pheader)
         }
     } else {
         assert_eq!(0, f.header.e_phnum); /* extra conformity check */

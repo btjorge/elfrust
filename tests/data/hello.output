@@ -4,20 +4,132 @@ Elf Version: EV_CURRENT
 OS ABI: 0
 ABI Version: 0
 ElfHeader { e_ident: [127, 69, 76, 70, 2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0], e_type: 3, e_machine: 62, e_version: 1, e_entry: 4176, e_phoff: 64, e_shoff: 13968, e_flags: 0, e_ehsize: 64, e_phentsize: 56, e_phnum: 14, e_shentsize: 64, e_shnum: 31, e_shstrndx: 30 }
-ElfProgHeader { p_type: 6, p_flags: 4, p_offset: 64, p_vaddr: 64, p_paddr: 64, p_filesz: 784, p_memsz: 784, p_align: 8 }
-ElfProgHeader { p_type: 3, p_flags: 4, p_offset: 916, p_vaddr: 916, p_paddr: 916, p_filesz: 28, p_memsz: 28, p_align: 1 }
-ElfProgHeader { p_type: 1, p_flags: 4, p_offset: 0, p_vaddr: 0, p_paddr: 0, p_filesz: 1576, p_memsz: 1576, p_align: 4096 }
-ElfProgHeader { p_type: 1, p_flags: 5, p_offset: 4096, p_vaddr: 4096, p_paddr: 4096, p_filesz: 349, p_memsz: 349, p_align: 4096 }
-ElfProgHeader { p_type: 1, p_flags: 4, p_offset: 8192, p_vaddr: 8192, p_paddr: 8192, p_filesz: 268, p_memsz: 268, p_align: 4096 }
-ElfProgHeader { p_type: 1, p_flags: 6, p_offset: 11728, p_vaddr: 15824, p_paddr: 15824, p_filesz: 584, p_memsz: 592, p_align: 4096 }
-ElfProgHeader { p_type: 2, p_flags: 6, p_offset: 11744, p_vaddr: 15840, p_paddr: 15840, p_filesz: 480, p_memsz: 480, p_align: 8 }
-ElfProgHeader { p_type: 4, p_flags: 4, p_offset: 848, p_vaddr: 848, p_paddr: 848, p_filesz: 32, p_memsz: 32, p_align: 8 }
-ElfProgHeader { p_type: 4, p_flags: 4, p_offset: 880, p_vaddr: 880, p_paddr: 880, p_filesz: 36, p_memsz: 36, p_align: 4 }
-ElfProgHeader { p_type: 4, p_flags: 4, p_offset: 8428, p_vaddr: 8428, p_paddr: 8428, p_filesz: 32, p_memsz: 32, p_align: 4 }
-ElfProgHeader { p_type: 1685382483, p_flags: 4, p_offset: 848, p_vaddr: 848, p_paddr: 848, p_filesz: 32, p_memsz: 32, p_align: 8 }
-ElfProgHeader { p_type: 1685382480, p_flags: 4, p_offset: 8212, p_vaddr: 8212, p_paddr: 8212, p_filesz: 44, p_memsz: 44, p_align: 4 }
-ElfProgHeader { p_type: 1685382481, p_flags: 6, p_offset: 0, p_vaddr: 0, p_paddr: 0, p_filesz: 0, p_memsz: 0, p_align: 16 }
-ElfProgHeader { p_type: 1685382482, p_flags: 4, p_offset: 11728, p_vaddr: 15824, p_paddr: 15824, p_filesz: 560, p_memsz: 560, p_align: 1 }
+type:   PT_PHDR
+flags:  PF_R
+offset: 64
+vaddr:  64
+paddr:  64
+filesz: 784
+memsz:  784
+align:  8
+
+type:   PT_INTERP
+flags:  PF_R
+offset: 916
+vaddr:  916
+paddr:  916
+filesz: 28
+memsz:  28
+align:  1
+
+type:   PT_LOAD
+flags:  PF_R
+offset: 0
+vaddr:  0
+paddr:  0
+filesz: 1576
+memsz:  1576
+align:  4096
+
+type:   PT_LOAD
+flags:  PF_X | PF_R
+offset: 4096
+vaddr:  4096
+paddr:  4096
+filesz: 349
+memsz:  349
+align:  4096
+
+type:   PT_LOAD
+flags:  PF_R
+offset: 8192
+vaddr:  8192
+paddr:  8192
+filesz: 268
+memsz:  268
+align:  4096
+
+type:   PT_LOAD
+flags:  PF_W | PF_R
+offset: 11728
+vaddr:  15824
+paddr:  15824
+filesz: 584
+memsz:  592
+align:  4096
+
+type:   PT_DYNAMIC
+flags:  PF_W | PF_R
+offset: 11744
+vaddr:  15840
+paddr:  15840
+filesz: 480
+memsz:  480
+align:  8
+
+type:   PT_NOTE
+flags:  PF_R
+offset: 848
+vaddr:  848
+paddr:  848
+filesz: 32
+memsz:  32
+align:  8
+
+type:   PT_NOTE
+flags:  PF_R
+offset: 880
+vaddr:  880
+paddr:  880
+filesz: 36
+memsz:  36
+align:  4
+
+type:   PT_NOTE
+flags:  PF_R
+offset: 8428
+vaddr:  8428
+paddr:  8428
+filesz: 32
+memsz:  32
+align:  4
+
+type:   PT_OS(1685382483)
+flags:  PF_R
+offset: 848
+vaddr:  848
+paddr:  848
+filesz: 32
+memsz:  32
+align:  8
+
+type:   PT_OS(1685382480)
+flags:  PF_R
+offset: 8212
+vaddr:  8212
+paddr:  8212
+filesz: 44
+memsz:  44
+align:  4
+
+type:   PT_OS(1685382481)
+flags:  PF_W | PF_R
+offset: 0
+vaddr:  0
+paddr:  0
+filesz: 0
+memsz:  0
+align:  16
+
+type:   PT_OS(1685382482)
+flags:  PF_R
+offset: 11728
+vaddr:  15824
+paddr:  15824
+filesz: 560
+memsz:  560
+align:  1
+
 0: "" ElfSectionHeader { sh_name: 0, sh_type: 0, sh_flags: 0, sh_addr: 0, sh_offset: 0, sh_size: 0, sh_link: 0, sh_info: 0, sh_addralign: 0, sh_entsize: 0 }
 1: ".note.gnu.property" ElfSectionHeader { sh_name: 27, sh_type: 7, sh_flags: 2, sh_addr: 848, sh_offset: 848, sh_size: 32, sh_link: 0, sh_info: 0, sh_addralign: 8, sh_entsize: 0 }
 2: ".note.gnu.build-id" ElfSectionHeader { sh_name: 46, sh_type: 7, sh_flags: 2, sh_addr: 880, sh_offset: 880, sh_size: 36, sh_link: 0, sh_info: 0, sh_addralign: 4, sh_entsize: 0 }

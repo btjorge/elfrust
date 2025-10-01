@@ -53,6 +53,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "bitflags"
+version = "2.9.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2261d10cca569e4643e526d8dc2e62e433cc8aba21ab764233731f8d369bf394"
+
+[[package]]
 name = "bstr"
 version = "1.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -72,6 +78,7 @@ checksum = "1d07550c9036bf2ae0c684c4297d503f838287c83c53686d05370d0e139ae570"
 name = "elfrust"
 version = "0.1.0"
 dependencies = [
+ "bitflags",
  "snapbox",
  "static_assertions",
  "strum_macros",
