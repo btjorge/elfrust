@@ -397,8 +397,13 @@ impl ElfFile {
         impl Display for A<'_, '_> {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 let h = self.header;
-                writeln!(f, "type:   {:?}", h.p_type)?;
-                write!(f, "flags:  ")?;
+                write!(f, "type:   {:?}", h.p_type)?;
+                if h.p_type == SegmentType::PT_INTERP {
+                    let interp = CStr::from_bytes_until_nul(self.file.mmap.offset(h.p_offset)).expect("invalid interp section");
+                    assert_eq!(interp.count_bytes() + 1, h.p_filesz.try_into().unwrap());
+                    write!(f, " ({:?})", interp)?;
+                };
+                write!(f, "\nflags:  ")?;
                 parser::to_writer(&h.p_flags, &mut *f)?;
                 writeln!(f, "")?;
                 writeln!(f, "offset: {:?}", h.p_offset)?;
