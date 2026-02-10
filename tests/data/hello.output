@@ -13,7 +13,7 @@ filesz: 784
 memsz:  784
 align:  8
 
-type:   PT_INTERP
+type:   PT_INTERP ("/lib64/ld-linux-x86-64.so.2")
 flags:  PF_R
 offset: 916
 vaddr:  916
