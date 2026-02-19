@@ -10,7 +10,7 @@ fn print_segments (f: &ElfFile) -> Result<(), &str>{
         for i in 0..f.header.e_phnum {
             let offset = f.header.e_phoff + u64::from(i) * u64::from(f.header.e_phentsize);
             let slice = f.mmap.offlen(offset, f.header.e_phentsize);
-            let pheader = ElfProgHeader::of_raw(ElfProgHeaderRaw::parse(slice)).ok_or("error")?;
+            let pheader = ElfProgHeader::try_from(ElfProgHeaderRaw::parse(slice))?;
             println!("{}", f.fmt_prog_header(&pheader))
         }
     } else {

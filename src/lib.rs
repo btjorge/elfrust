@@ -237,17 +237,21 @@ impl ElfType {
     pub const ET_HIOS   : Half = 0xfeff;
     pub const ET_LOPROC : Half = 0xff00;
     pub const ET_HIPROC : Half = 0xffff;
+}
 
-    pub fn of_half(n: Half) -> Self {
+impl TryFrom<Half> for ElfType {
+    type Error = &'static str;
+
+    fn try_from(n: Half) -> Result<Self, Self::Error> {
         match n {
-            0 => ElfType::ET_NONE,
-            1 => ElfType::ET_REL,
-            2 => ElfType::ET_EXEC,
-            3 => ElfType::ET_DYN,
-            4 => ElfType::ET_CORE,
-            ElfType::ET_LOOS..=ElfType::ET_HIOS => ElfType::ET_OS(n),
-            ElfType::ET_LOPROC..=ElfType::ET_HIPROC => ElfType::ET_PROC(n),
-            _ => panic!("invalid ELF type")
+            0 => Ok(ElfType::ET_NONE),
+            1 => Ok(ElfType::ET_REL),
+            2 => Ok(ElfType::ET_EXEC),
+            3 => Ok(ElfType::ET_DYN),
+            4 => Ok(ElfType::ET_CORE),
+            ElfType::ET_LOOS..=ElfType::ET_HIOS => Ok(ElfType::ET_OS(n)),
+            ElfType::ET_LOPROC..=ElfType::ET_HIPROC => Ok(ElfType::ET_PROC(n)),
+            _ => Err("invalid ELF type")
         }
     }
 }
@@ -270,11 +274,13 @@ pub struct ElfHeader {
     pub e_shstrndx:  Half,
 }
 
-impl ElfHeader {
-    fn of_raw(r: ElfHeaderRaw) -> Result<Self, &'static str> {
+impl TryFrom<ElfHeaderRaw> for ElfHeader {
+    type Error = &'static str;
+
+    fn try_from(r: ElfHeaderRaw) -> Result<Self, &'static str> {
         let e_ident = EIdent::parse(&r.e_ident)?;
-        let e_type = ElfType::of_half(r.e_type);
-        let e_version = ElfVersion::from_repr(r.e_version).unwrap();
+        let e_type = ElfType::try_from(r.e_type)?;
+        let e_version = ElfVersion::from_repr(r.e_version).ok_or("invalid version")?;
 
         assert!(r.e_shnum < SHN_LORESERVE);
         assert!(r.e_shstrndx < SHN_LORESERVE); /* TODO */
@@ -353,20 +359,24 @@ impl SegmentType {
     const PT_HIOS   : Word = 0x6fffffff;
     const PT_LOPROC : Word = 0x70000000;
     const PT_HIPROC : Word = 0x7fffffff;
+}
 
-    fn of_word(n: Word) -> SegmentType {
+impl TryFrom<Word> for SegmentType {
+    type Error = &'static str;
+
+    fn try_from(n: Word) -> Result<SegmentType, &'static str> {
         match n {
-            0 => SegmentType::PT_NULL,
-            1 => SegmentType::PT_LOAD,
-            2 => SegmentType::PT_DYNAMIC,
-            3 => SegmentType::PT_INTERP,
-            4 => SegmentType::PT_NOTE,
-            5 => SegmentType::PT_SHLIB,
-            6 => SegmentType::PT_PHDR,
-            7 => SegmentType::PT_TLS,
-            Self::PT_LOOS..=Self::PT_HIOS => SegmentType::PT_OS(n),
-            Self::PT_LOPROC..=Self::PT_HIPROC => SegmentType::PT_PROC(n),
-            _ => panic!("invalid segment type"),
+            0 => Ok(SegmentType::PT_NULL),
+            1 => Ok(SegmentType::PT_LOAD),
+            2 => Ok(SegmentType::PT_DYNAMIC),
+            3 => Ok(SegmentType::PT_INTERP),
+            4 => Ok(SegmentType::PT_NOTE),
+            5 => Ok(SegmentType::PT_SHLIB),
+            6 => Ok(SegmentType::PT_PHDR),
+            7 => Ok(SegmentType::PT_TLS),
+            Self::PT_LOOS..=Self::PT_HIOS => Ok(SegmentType::PT_OS(n)),
+            Self::PT_LOPROC..=Self::PT_HIPROC => Ok(SegmentType::PT_PROC(n)),
+            _ => Err("invalid segment type"),
         }
     }
 }
@@ -392,12 +402,14 @@ pub struct ElfProgHeader {
     p_align:  Xword,
 }
 
-impl ElfProgHeader {
-    pub fn of_raw(r: ElfProgHeaderRaw) -> Option<ElfProgHeader> {
-        Some(
+impl TryFrom<ElfProgHeaderRaw> for ElfProgHeader {
+    type Error = &'static str;
+
+    fn try_from(r: ElfProgHeaderRaw) -> Result<ElfProgHeader, &'static str> {
+        Ok(
             ElfProgHeader {
-                p_type: SegmentType::of_word(r.p_type),
-                p_flags: SegmentFlags::from_bits(r.p_flags)?,
+                p_type: SegmentType::try_from(r.p_type)?,
+                p_flags: SegmentFlags::from_bits(r.p_flags).ok_or("invalid flags")?,
                 p_offset: r.p_offset,
                 p_vaddr:  r.p_vaddr,
                 p_paddr:  r.p_paddr,
@@ -407,7 +419,9 @@ impl ElfProgHeader {
             }
         )
     }
+}
 
+impl ElfProgHeader {
     #[expect(dead_code)] // TODO
     fn check(&self) -> Result<(), &str> {
         if self.p_align >= 2 &&
@@ -475,7 +489,7 @@ impl ElfFile {
         ident.validate()?;
 
         let rheader = ElfHeaderRaw::parse(&mmap[0..size_of::<ElfHeaderRaw>()]);
-        let header = ElfHeader::of_raw(rheader).unwrap();
+        let header = ElfHeader::try_from(rheader).unwrap();
 
         Ok(ElfFile { ident, header, mmap })
     }
