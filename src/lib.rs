@@ -15,9 +15,10 @@ const EI_ABIVERSION : usize =  8;
 const EI_PAD        : usize =  9;
 const EI_NIDENT     : usize = 16;
 
-#[derive(FromRepr, Debug, Display)]
+#[derive(FromRepr, Debug, Display, PartialEq, Default, Copy, Clone)]
 #[repr(u8)]
 enum ElfClass {
+    #[default]
     #[strum(to_string = "none")]
     ELFCLASSNONE = 0,
 
@@ -28,9 +29,10 @@ enum ElfClass {
     ELFCLASS64 = 2,
 }
 
-#[derive(FromRepr, Debug, Display)]
+#[derive(FromRepr, Debug, Display, PartialEq, Default, Copy, Clone)]
 #[repr(u8)]
 enum ElfData {
+    #[default]
     #[strum(to_string = "none")]
     ELFDATANONE = 0,
 
@@ -42,12 +44,15 @@ enum ElfData {
 }
 
 #[allow(non_camel_case_types)]
-#[derive(FromRepr, Debug, Display, PartialEq)]
+#[derive(FromRepr, Debug, Display, PartialEq, Default, Copy, Clone)]
+#[repr(u8)]
 enum ElfVersion {
+    #[default]
     EV_NONE = 0,
     EV_CURRENT = 1,
 }
 
+#[derive(Debug, PartialEq, Default, Copy, Clone)]
 pub struct EIdent {
     class : ElfClass,
     data : ElfData,
@@ -68,12 +73,17 @@ impl Display for EIdent {
     }
 }
 
+use static_assertions::{const_assert, const_assert_eq};
+
+const_assert!(cfg!(target_endian = "little"));
+
 impl EIdent {
     fn parse(buf: &[u8]) -> Result<EIdent, &str> {
-        if buf[EI_MAG0] != 0x7f
-            && buf[EI_MAG1] != b'E'
-            && buf[EI_MAG2] != b'L'
-            && buf[EI_MAG3] != b'F'
+        if buf.len() < EI_NIDENT
+            || buf[EI_MAG0] != 0x7f
+            || buf[EI_MAG1] != b'E'
+            || buf[EI_MAG2] != b'L'
+            || buf[EI_MAG3] != b'F'
         {
             return Err("not an ELF file");
         }
@@ -94,27 +104,26 @@ impl EIdent {
     }
 
     fn validate(&self) -> Result<(), &str> {
-        if self.version != ElfVersion::EV_CURRENT {
-            return Err("Invalid version");
+        match self.version {
+            ElfVersion::EV_NONE => return Err("invalid version"),
+            ElfVersion::EV_CURRENT => (),
         }
 
         match self.class {
-            ElfClass::ELFCLASSNONE => return Err("Invalid class"),
-            ElfClass::ELFCLASS32 => return Err("Unsupported class"),
-            ElfClass::ELFCLASS64 => ()
+            ElfClass::ELFCLASSNONE => return Err("invalid class"),
+            ElfClass::ELFCLASS32 => return Err("unsupported class"),
+            ElfClass::ELFCLASS64 => (),
         }
 
         match self.data {
-            ElfData::ELFDATANONE => return Err("Invalid data encoding"),
+            ElfData::ELFDATANONE => return Err("invalid data encoding"),
             ElfData::ELFDATA2LSB => (),
-            ElfData::ELFDATA2MSB => return Err("Unsupported data encoding")
+            ElfData::ELFDATA2MSB => return Err("unsupported data encoding"),
         }
 
         Ok(())
     }
 }
-
-use static_assertions::{const_assert, const_assert_eq};
 
 const_assert_eq!(1, size_of::<u8>());
 const_assert_eq!(1, align_of::<u8>());
@@ -144,7 +153,7 @@ type Xword  = u64;
 #[expect(unused)]
 type Sxword = i64;
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 #[repr(C)]
 pub struct ElfHeader {
     pub e_ident:     [u8; EI_NIDENT],
@@ -163,7 +172,7 @@ pub struct ElfHeader {
     pub e_shstrndx:  Half,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 #[repr(C)]
 pub struct ElfProgHeaderRaw {
     pub p_type:   Word,
@@ -176,7 +185,7 @@ pub struct ElfProgHeaderRaw {
     pub p_align:  Xword,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 #[repr(C)]
 pub struct ElfSectionHeader {
     pub sh_name:      Word,
@@ -416,5 +425,42 @@ impl ElfFile {
         }
 
         A { file: self, header: &h }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_eident() {
+        assert_eq!(Err("not an ELF file"),       EIdent::parse(b"\x7f"));
+        assert_eq!(Err("not an ELF file"),       EIdent::parse(b"\x7fEFF\0\0\0\0\0\0\0\0\0\0\0\0"));
+        assert_eq!(Err("invalid class"),         EIdent::parse(b"\x7fELF\x42\0\0\0\0\0\0\0\0\0\0\0"));
+        assert_eq!(Err("invalid data encoding"), EIdent::parse(b"\x7fELF\0\x42\0\0\0\0\0\0\0\0\0\0"));
+        assert_eq!(Err("invalid version"),       EIdent::parse(b"\x7fELF\0\0\x42\0\0\0\0\0\0\0\0\0"));
+
+        assert_eq!(Ok(EIdent::default()),        EIdent::parse(b"\x7fELF\0\0\0\0\0\0\0\0\0\0\0\0"));
+    }
+
+    #[test]
+    fn validate_eident() {
+        let default = EIdent::default();
+        let current = EIdent { version: ElfVersion::EV_CURRENT, ..default };
+        let class64 = EIdent { class: ElfClass::ELFCLASS64, ..current };
+        let valid = EIdent { data: ElfData::ELFDATA2LSB, ..class64};
+
+        assert_eq!(Err("invalid version"),   default.validate());
+        assert_eq!(Err("invalid class"),     current.validate());
+        assert_eq!(Err("unsupported class"), EIdent { class: ElfClass::ELFCLASS32, .. current }.validate());
+        assert_eq!(Err("invalid data encoding"), class64.validate());
+        assert_eq!(Err("unsupported data encoding"), EIdent { data: ElfData::ELFDATA2MSB, ..class64}.validate());
+        assert_eq!(Ok(()), valid.validate());
+    }
+
+    #[test]
+    fn parse_validate_eident() {
+        let eident = EIdent::parse(b"\x7fELF\x02\x01\x01\0\0\0\0\0\0\0\0\0").unwrap();
+        assert_eq!(Ok(()), eident.validate());
     }
 }
