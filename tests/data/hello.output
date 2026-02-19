@@ -3,7 +3,24 @@ Data Encoding: 2's complement, least significant byte first
 Elf Version: EV_CURRENT
 OS ABI: 0
 ABI Version: 0
-ElfHeader { e_ident: [127, 69, 76, 70, 2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0], e_type: 3, e_machine: 62, e_version: 1, e_entry: 4176, e_phoff: 64, e_shoff: 13968, e_flags: 0, e_ehsize: 64, e_phentsize: 56, e_phnum: 14, e_shentsize: 64, e_shnum: 31, e_shstrndx: 30 }
+Elf Class: 64 bits
+Data Encoding: 2's complement, least significant byte first
+Elf Version: EV_CURRENT
+OS ABI: 0
+ABI Version: 0
+Type: ET_DYN
+Machine: 62
+Elf Version: EV_CURRENT
+Entry: 0x1050
+Program Header Offset: 64
+Section Header Offset: 13968
+Flags: 0
+Elf Header Size: 64
+Program Header Entry Size: 56
+Program Header Number: 14
+Section Header Entry Size: 64
+Section Header Number: 31
+Section Header String Index: 30
 type:   PT_PHDR
 flags:  PF_R
 offset: 64

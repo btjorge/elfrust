@@ -45,8 +45,8 @@ enum ElfData {
 
 #[allow(non_camel_case_types)]
 #[derive(FromRepr, Debug, Display, PartialEq, Default, Copy, Clone)]
-#[repr(u8)]
-enum ElfVersion {
+#[repr(u32)] // ??
+pub enum ElfVersion {
     #[default]
     EV_NONE = 0,
     EV_CURRENT = 1,
@@ -78,7 +78,7 @@ use static_assertions::{const_assert, const_assert_eq};
 const_assert!(cfg!(target_endian = "little"));
 
 impl EIdent {
-    fn parse(buf: &[u8]) -> Result<EIdent, &str> {
+    fn parse(buf: &[u8]) -> Result<EIdent, &'static str> {
         if buf.len() < EI_NIDENT
             || buf[EI_MAG0] != 0x7f
             || buf[EI_MAG1] != b'E'
@@ -155,21 +155,21 @@ type Sxword = i64;
 
 #[derive(Debug, Copy, Clone)]
 #[repr(C)]
-pub struct ElfHeader {
-    pub e_ident:     [u8; EI_NIDENT],
-    pub e_type:      Half,
-    pub e_machine:   Half,
-    pub e_version:   Word,
-    pub e_entry:     Addr,
-    pub e_phoff:     Off,
-    pub e_shoff:     Off,
-    pub e_flags:     Word,
-    pub e_ehsize:    Half,
-    pub e_phentsize: Half,
-    pub e_phnum:     Half,
-    pub e_shentsize: Half,
-    pub e_shnum:     Half,
-    pub e_shstrndx:  Half,
+struct ElfHeaderRaw {
+    e_ident:     [u8; EI_NIDENT],
+    e_type:      Half,
+    e_machine:   Half,
+    e_version:   Word,
+    e_entry:     Addr,
+    e_phoff:     Off,
+    e_shoff:     Off,
+    e_flags:     Word,
+    e_ehsize:    Half,
+    e_phentsize: Half,
+    e_phnum:     Half,
+    e_shentsize: Half,
+    e_shnum:     Half,
+    e_shstrndx:  Half,
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -202,7 +202,7 @@ pub struct ElfSectionHeader {
 
 const_assert!(size_of::<ElfProgHeaderRaw>() % align_of::<ElfProgHeaderRaw>() == 0);
 
-impl ElfHeader {
+impl ElfHeaderRaw {
     fn parse(buf: &[u8]) -> Self {
         assert!(buf.len() >= size_of::<Self>());
 
@@ -212,10 +212,114 @@ impl ElfHeader {
             ptr.read_unaligned()
         };
 
+        assert_eq!(usize::from(ret.e_ehsize), size_of::<ElfHeaderRaw>());
         assert_eq!(usize::from(ret.e_phentsize), size_of::<ElfProgHeaderRaw>());
         assert_eq!(usize::from(ret.e_shentsize), size_of::<ElfSectionHeader>());
 
         ret
+    }
+}
+
+#[allow(non_camel_case_types)]
+#[derive(Debug)]
+pub enum ElfType {
+    ET_NONE,
+    ET_REL,
+    ET_EXEC,
+    ET_DYN,
+    ET_CORE,
+    ET_OS(Half),
+    ET_PROC(Half),
+}
+
+impl ElfType {
+    pub const ET_LOOS   : Half = 0xfe00;
+    pub const ET_HIOS   : Half = 0xfeff;
+    pub const ET_LOPROC : Half = 0xff00;
+    pub const ET_HIPROC : Half = 0xffff;
+
+    pub fn of_half(n: Half) -> Self {
+        match n {
+            0 => ElfType::ET_NONE,
+            1 => ElfType::ET_REL,
+            2 => ElfType::ET_EXEC,
+            3 => ElfType::ET_DYN,
+            4 => ElfType::ET_CORE,
+            ElfType::ET_LOOS..=ElfType::ET_HIOS => ElfType::ET_OS(n),
+            ElfType::ET_LOPROC..=ElfType::ET_HIPROC => ElfType::ET_PROC(n),
+            _ => panic!("invalid ELF type")
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct ElfHeader {
+    pub e_ident:     EIdent,
+    pub e_type:      ElfType,
+    pub e_machine:   Half,
+    pub e_version:   ElfVersion,
+    pub e_entry:     Addr,
+    pub e_phoff:     Off,
+    pub e_shoff:     Off,
+    pub e_flags:     Word,
+    pub e_ehsize:    Half,
+    pub e_phentsize: Half,
+    pub e_phnum:     Half,
+    pub e_shentsize: Half,
+    pub e_shnum:     Half,
+    pub e_shstrndx:  Half,
+}
+
+impl ElfHeader {
+    fn of_raw(r: ElfHeaderRaw) -> Result<Self, &'static str> {
+        let e_ident = EIdent::parse(&r.e_ident)?;
+        let e_type = ElfType::of_half(r.e_type);
+        let e_version = ElfVersion::from_repr(r.e_version).unwrap();
+
+        assert!(r.e_shnum < SHN_LORESERVE);
+        assert!(r.e_shstrndx < SHN_LORESERVE); /* TODO */
+
+        Ok(
+            ElfHeader {
+                e_ident,
+                e_type,
+                e_machine: r.e_machine,
+                e_version,
+                e_entry: r.e_entry,
+                e_phoff: r.e_phoff,
+                e_shoff: r.e_shoff,
+                e_flags: r.e_flags,
+                e_ehsize: r.e_ehsize,
+                e_phentsize: r.e_phentsize,
+                e_phnum: r.e_phnum,
+                e_shentsize: r.e_shentsize,
+                e_shnum: r.e_shnum,
+                e_shstrndx: r.e_shstrndx,
+            }
+        )
+    }
+}
+
+impl Display for ElfHeader {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        writeln!(f, "Elf Class: {}", self.e_ident.class)?;
+        writeln!(f, "Data Encoding: {}", self.e_ident.data)?;
+        writeln!(f, "Elf Version: {}", self.e_ident.version)?;
+        writeln!(f, "OS ABI: {}", self.e_ident.osabi)?;
+        writeln!(f, "ABI Version: {}", self.e_ident.abiversion)?;
+        writeln!(f, "Type: {:?}", self.e_type)?;
+        writeln!(f, "Machine: {}", self.e_machine)?;
+        writeln!(f, "Elf Version: {}", self.e_version)?;
+        writeln!(f, "Entry: {:#x}", self.e_entry)?;
+        writeln!(f, "Program Header Offset: {}", self.e_phoff)?;
+        writeln!(f, "Section Header Offset: {}", self.e_shoff)?;
+        writeln!(f, "Flags: {}", self.e_flags)?;
+        writeln!(f, "Elf Header Size: {}", self.e_ehsize)?;
+        writeln!(f, "Program Header Entry Size: {}", self.e_phentsize)?;
+        writeln!(f, "Program Header Number: {}", self.e_phnum)?;
+        writeln!(f, "Section Header Entry Size: {}", self.e_shentsize)?;
+        writeln!(f, "Section Header Number: {}", self.e_shnum)?;
+        write!(f, "Section Header String Index: {}", self.e_shstrndx)
     }
 }
 
@@ -370,7 +474,8 @@ impl ElfFile {
 
         ident.validate()?;
 
-        let header = ElfHeader::parse(&mmap[0..size_of::<ElfHeader>()]);
+        let rheader = ElfHeaderRaw::parse(&mmap[0..size_of::<ElfHeaderRaw>()]);
+        let header = ElfHeader::of_raw(rheader).unwrap();
 
         Ok(ElfFile { ident, header, mmap })
     }

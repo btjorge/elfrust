@@ -13,7 +13,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     println!("{}", f.ident);
 
-    println!("{:?}", f.header);
+    println!("{}", f.header);
 
     if f.header.e_phoff != 0 {
         assert_ne!(0, f.header.e_phnum);
