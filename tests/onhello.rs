@@ -8,6 +8,7 @@ use snapbox::file;
 fn test () {
     let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/data/hello");
     let _ = Command::new(cargo_bin("elfrust"))
+        .arg("all")
         .arg(path)
         .assert()
         .stdout_eq(file!["./data/hello.output"])
