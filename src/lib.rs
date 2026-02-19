@@ -295,10 +295,11 @@ impl ElfProgHeader {
         )
     }
 
+    #[expect(dead_code)] // TODO
     fn check(&self) -> Result<(), &str> {
-        if (self.p_align >= 2 &&
+        if self.p_align >= 2 &&
             (!self.p_align.is_power_of_two()
-             || self.p_offset % self.p_align == self.p_vaddr % self.p_align)) {
+             || self.p_offset % self.p_align == self.p_vaddr % self.p_align) {
             Err("invalid alignement")
         } else {
             Ok(())
