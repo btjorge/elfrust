@@ -1,6 +1,6 @@
 use std::env;
 use std::error::Error;
-use elfrust::{self, ElfFile, ElfProgHeader, ElfProgHeaderRaw, ElfSectionHeader, OffLen};
+use elfrust::{self, ElfFile, ElfProgHeader, ElfProgHeaderRaw, ElfSectionHeaderRaw, ElfSectionHeader, OffLen};
 
 fn print_segments (f: &ElfFile) -> Result<(), &str>{
     if f.header.e_phoff != 0 {
@@ -20,20 +20,23 @@ fn print_segments (f: &ElfFile) -> Result<(), &str>{
     Ok(())
 }
 
-fn print_sections(f: &ElfFile) {
+fn print_sections(f: &ElfFile) -> Result<(), &str> {
     if f.header.e_shoff != 0 {
         assert_ne!(0, f.header.e_shnum); /* TODO: valid, not supported yet */
         assert!(f.header.e_shnum < elfrust::SHN_LORESERVE); /* extra? conformity check */
 
         for i in 0..f.header.e_shnum {
             let offset = f.header.e_shoff + u64::from(i) * u64::from(f.header.e_shentsize);
-            let sheader = ElfSectionHeader::parse(f.mmap.offlen(offset, f.header.e_shentsize));
-            println!("{}: {:?} {:?}", i, f.get_section_name(sheader.sh_name), sheader)
+            let rsheader = ElfSectionHeaderRaw::parse(f.mmap.offlen(offset, f.header.e_shentsize));
+            let sheader = ElfSectionHeader::try_from(rsheader)?;
+            println!("{}", f.fmt_section_header(&sheader))
         }
 
     } else {
         assert_eq!(0, f.header.e_shnum); /* extra conformity check */
     }
+
+    Ok(())
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -51,13 +54,13 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         "segments" => print_segments(&f)?,
 
-        "sections" => print_sections(&f),
+        "sections" => print_sections(&f)?,
 
         "all" => {
             println!("{}", f.ident);
             println!("{}", f.header);
             print_segments(&f)?;
-            print_sections(&f)
+            print_sections(&f)?
         }
 
         _ => panic!("unknown command"),

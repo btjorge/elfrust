@@ -187,7 +187,7 @@ pub struct ElfProgHeaderRaw {
 
 #[derive(Debug, Copy, Clone)]
 #[repr(C)]
-pub struct ElfSectionHeader {
+pub struct ElfSectionHeaderRaw {
     pub sh_name:      Word,
     pub sh_type:      Word,
     pub sh_flags:     Xword,
@@ -214,7 +214,7 @@ impl ElfHeaderRaw {
 
         assert_eq!(usize::from(ret.e_ehsize), size_of::<ElfHeaderRaw>());
         assert_eq!(usize::from(ret.e_phentsize), size_of::<ElfProgHeaderRaw>());
-        assert_eq!(usize::from(ret.e_shentsize), size_of::<ElfSectionHeader>());
+        assert_eq!(usize::from(ret.e_shentsize), size_of::<ElfSectionHeaderRaw>());
 
         ret
     }
@@ -434,6 +434,137 @@ impl ElfProgHeader {
     }
 }
 
+#[allow(non_camel_case_types)]
+#[derive(Debug, PartialEq)]
+pub enum SectionType {
+    SHT_NULL,
+    SHT_PROGBITS,
+    SHT_SYMTAB,
+    SHT_STRTAB,
+    SHT_RELA,
+    SHT_HASH,
+    SHT_DYNAMIC,
+    SHT_NOTE,
+    SHT_NOBITS,
+    SHT_REL,
+    SHT_SHLIB,
+    SHT_DYNSYM,
+    SHT_INIT_ARRAY,
+    SHT_FINI_ARRAY,
+    SHT_PREINIT_ARRAY,
+    SHT_GROUP,
+    SHT_SYMTAB_SHNDX,
+    SHT_RELR,
+    SHT_OS(Word),
+    SHT_PROC(Word),
+    SHT_USER(Word),
+}
+
+impl SectionType {
+    const SHT_LOOS   : Word = 0x60000000;
+    const SHT_HIOS   : Word = 0x6fffffff;
+    const SHT_LOPROC : Word = 0x70000000;
+    const SHT_HIPROC : Word = 0x7fffffff;
+    const SHT_LOUSER : Word = 0x80000000;
+    const SHT_HIUSER : Word = 0xffffffff;
+}
+
+impl TryFrom<Word> for SectionType {
+    type Error = &'static str;
+
+    fn try_from(n: Word) -> Result<Self, Self::Error> {
+        match n {
+            0 => Ok(SectionType::SHT_NULL),
+            1 => Ok(SectionType::SHT_PROGBITS),
+            2 => Ok(SectionType::SHT_SYMTAB),
+            3 => Ok(SectionType::SHT_STRTAB),
+            4 => Ok(SectionType::SHT_RELA),
+            5 => Ok(SectionType::SHT_HASH),
+            6 => Ok(SectionType::SHT_DYNAMIC),
+            7 => Ok(SectionType::SHT_NOTE),
+            8 => Ok(SectionType::SHT_NOBITS),
+            9 => Ok(SectionType::SHT_REL),
+            10 => Ok(SectionType::SHT_SHLIB),
+            11 => Ok(SectionType::SHT_DYNSYM),
+            14 => Ok(SectionType::SHT_INIT_ARRAY),
+            15 => Ok(SectionType::SHT_FINI_ARRAY),
+            16 => Ok(SectionType::SHT_PREINIT_ARRAY),
+            17 => Ok(SectionType::SHT_GROUP),
+            18 => Ok(SectionType::SHT_SYMTAB_SHNDX),
+            19 => Ok(SectionType::SHT_RELR),
+            Self::SHT_LOOS..=Self::SHT_HIOS => Ok(Self::SHT_OS(n)),
+            Self::SHT_LOPROC..=Self::SHT_HIPROC => Ok(Self::SHT_PROC(n)),
+            Self::SHT_LOUSER..=Self::SHT_HIUSER => Ok(Self::SHT_USER(n)),
+            _ => Err("invalid section type"),
+        }
+    }
+}
+
+bitflags! {
+    #[derive(Debug, PartialEq)]
+    pub struct SectionFlags: Xword {
+        const SHF_WRITE            = 0x1;
+        const SHF_ALLOC            = 0x2;
+        const SHF_EXECINSTR        = 0x4;
+        const SHF_MERGE            = 0x10;
+        const SHF_STRINGS          = 0x20;
+        const SHF_INFO_LINK        = 0x40;
+        const SHF_LINK_ORDER       = 0x80;
+        const SHF_OS_NONCONFORMING = 0x100;
+        const SHF_GROUP            = 0x200;
+        const SHF_TLS              = 0x400;
+        const SHF_COMPRESSED       = 0x800;
+    }
+}
+
+#[derive(Debug)]
+pub struct ElfSectionHeader {
+    pub sh_name:      Word,
+    pub sh_type:      SectionType,
+    pub sh_flags:     SectionFlags,
+    pub sh_addr:      Addr,
+    pub sh_offset:    Off,
+    pub sh_size:      Xword,
+    pub sh_link:      Word,
+    pub sh_info:      Word,
+    pub sh_addralign: Xword,
+    pub sh_entsize:   Xword,
+}
+
+impl ElfSectionHeaderRaw {
+    pub fn parse(buf: &[u8]) -> Self {
+        assert!(buf.len() >= size_of::<Self>());
+
+        let ptr = buf.as_ptr() as *const Self;
+
+        unsafe { ptr.read_unaligned() }
+    }
+}
+
+impl TryFrom<ElfSectionHeaderRaw> for ElfSectionHeader {
+    type Error =  &'static str;
+
+    fn try_from(r: ElfSectionHeaderRaw) -> Result<Self, Self::Error> {
+        let sh_type = SectionType::try_from(r.sh_type)?;
+        let sh_flags = SectionFlags::from_bits(r.sh_flags).ok_or("invalid flags")?;
+
+        Ok(
+            ElfSectionHeader {
+                sh_name: r.sh_name,
+                sh_type,
+                sh_flags,
+                sh_addr: r.sh_addr,
+                sh_offset: r.sh_offset,
+                sh_size: r.sh_size,
+                sh_link: r.sh_link,
+                sh_info: r.sh_info,
+                sh_addralign: r.sh_addralign,
+                sh_entsize: r.sh_entsize,
+            }
+        )
+    }
+}
+
 pub trait OffLen<T> {
     fn offset(&self, off: impl Into<u64>) -> &[T];
     fn offlen(&self, off: impl Into<u64>, len: impl Into<u64>) -> &[T];
@@ -452,16 +583,6 @@ impl OffLen<u8> for [u8] {
         assert!(off <= usize::MAX - len);
 
         &self[off..(off+len)]
-    }
-}
-
-impl ElfSectionHeader {
-    pub fn parse(buf: &[u8]) -> Self {
-        assert!(buf.len() >= size_of::<Self>());
-
-        let ptr = buf.as_ptr() as *const Self;
-
-        unsafe { ptr.read_unaligned() }
     }
 }
 
@@ -494,18 +615,18 @@ impl ElfFile {
         Ok(ElfFile { ident, header, mmap })
     }
 
-    fn get_section_from_index(&self, idx: Half) -> ElfSectionHeader {
+    fn get_section_from_index(&self, idx: Half) -> Result<ElfSectionHeader, &'static str> {
         let off = self.header.e_shoff + u64::from(idx) * u64::from (self.header.e_shentsize);
-        ElfSectionHeader::parse(self.mmap.offset(off))
+        ElfSectionHeader::try_from(ElfSectionHeaderRaw::parse(self.mmap.offset(off)))
     }
 
     fn get_section_name_table(&self) -> &[u8] {
         let idx = self.header.e_shstrndx;
         assert_ne!(idx, SHN_UNDEF);
         assert!(idx < SHN_LORESERVE);
-        let hsection = self.get_section_from_index(idx);
-        assert_eq!(3, hsection.sh_type); /* STRTAB */
-        assert_eq!(0, hsection.sh_flags); /* none */
+        let hsection = self.get_section_from_index(idx).unwrap();
+        assert_eq!(SectionType::SHT_STRTAB, hsection.sh_type); /* STRTAB */
+        assert_eq!(SectionFlags::empty(), hsection.sh_flags); /* none */
         assert_eq!(0, hsection.sh_addr); /* not in memory */
         assert!(hsection.sh_addralign <= 1);
         assert_eq!(0, hsection.sh_entsize); /* not fixed size entries (?) */
@@ -544,6 +665,32 @@ impl ElfFile {
         }
 
         A { file: self, header: &h }
+    }
+
+    pub fn fmt_section_header(&self, h: &ElfSectionHeader) -> impl Display {
+        struct A<'a, 'b> { file: &'a ElfFile, header: &'b ElfSectionHeader }
+
+        impl Display for A<'_, '_> {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                let h = self.header;
+
+                writeln!(f, "name: {} {:?}", h.sh_name,
+                         self.file.get_section_name(h.sh_name))?;
+                writeln!(f, "type: {:?}", h.sh_type)?;
+                write!(f, "flags: ")?;
+                parser::to_writer(&h.sh_flags, &mut *f)?;
+                writeln!(f, "")?;
+                writeln!(f, "addr: {:?}", h.sh_addr)?;
+                writeln!(f, "offset: {:?}", h.sh_offset)?;
+                writeln!(f, "size: {:?}", h.sh_size)?;
+                writeln!(f, "link: {:?}", h.sh_link)?;
+                writeln!(f, "info: {:?}", h.sh_info)?;
+                writeln!(f, "addralign: {:?}", h.sh_addralign)?;
+                writeln!(f, "entsize: {:?}", h.sh_entsize)
+            }
+        }
+
+        A { file: self, header: h }
     }
 }
 
