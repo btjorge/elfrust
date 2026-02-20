@@ -1,6 +1,7 @@
 use std::fs::File;
 use std::error::Error;
 use strum_macros::{FromRepr, Display};
+use bytemuck::{AnyBitPattern, pod_read_unaligned};
 
 const EI_MAG0       : usize =  0;
 const EI_MAG1       : usize =  1;
@@ -153,7 +154,7 @@ type Xword  = u64;
 #[expect(unused)]
 type Sxword = i64;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, AnyBitPattern)]
 #[repr(C)]
 struct ElfHeaderRaw {
     e_ident:     [u8; EI_NIDENT],
@@ -172,7 +173,7 @@ struct ElfHeaderRaw {
     e_shstrndx:  Half,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, AnyBitPattern)]
 #[repr(C)]
 pub struct ElfProgHeaderRaw {
     pub p_type:   Word,
@@ -185,7 +186,7 @@ pub struct ElfProgHeaderRaw {
     pub p_align:  Xword,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, AnyBitPattern)]
 #[repr(C)]
 pub struct ElfSectionHeaderRaw {
     pub sh_name:      Word,
@@ -206,11 +207,7 @@ impl ElfHeaderRaw {
     fn parse(buf: &[u8]) -> Self {
         assert!(buf.len() >= size_of::<Self>());
 
-        let ptr = buf.as_ptr() as *const Self;
-
-        let ret : Self = unsafe {
-            ptr.read_unaligned()
-        };
+        let ret : Self = pod_read_unaligned(buf);
 
         assert_eq!(usize::from(ret.e_ehsize), size_of::<ElfHeaderRaw>());
         assert_eq!(usize::from(ret.e_phentsize), size_of::<ElfProgHeaderRaw>());
@@ -333,9 +330,7 @@ impl ElfProgHeaderRaw {
     pub fn parse(buf: &[u8]) -> Self {
         assert!(buf.len() >= size_of::<Self>());
 
-        let ptr = buf.as_ptr() as *const Self;
-
-        unsafe { ptr.read_unaligned() }
+        pod_read_unaligned(buf)
     }
 }
 
@@ -535,9 +530,7 @@ impl ElfSectionHeaderRaw {
     pub fn parse(buf: &[u8]) -> Self {
         assert!(buf.len() >= size_of::<Self>());
 
-        let ptr = buf.as_ptr() as *const Self;
-
-        unsafe { ptr.read_unaligned() }
+        pod_read_unaligned(buf)
     }
 }
 
@@ -617,7 +610,7 @@ impl ElfFile {
 
     fn get_section_from_index(&self, idx: Half) -> Result<ElfSectionHeader, &'static str> {
         let off = self.header.e_shoff + u64::from(idx) * u64::from (self.header.e_shentsize);
-        ElfSectionHeader::try_from(ElfSectionHeaderRaw::parse(self.mmap.offset(off)))
+        ElfSectionHeader::try_from(ElfSectionHeaderRaw::parse(self.mmap.offlen(off, self.header.e_shentsize)))
     }
 
     fn get_section_name_table(&self) -> &[u8] {
