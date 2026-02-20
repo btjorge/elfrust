@@ -147,34 +147,344 @@ filesz: 560
 memsz:  560
 align:  1
 
-0: "" ElfSectionHeader { sh_name: 0, sh_type: 0, sh_flags: 0, sh_addr: 0, sh_offset: 0, sh_size: 0, sh_link: 0, sh_info: 0, sh_addralign: 0, sh_entsize: 0 }
-1: ".note.gnu.property" ElfSectionHeader { sh_name: 27, sh_type: 7, sh_flags: 2, sh_addr: 848, sh_offset: 848, sh_size: 32, sh_link: 0, sh_info: 0, sh_addralign: 8, sh_entsize: 0 }
-2: ".note.gnu.build-id" ElfSectionHeader { sh_name: 46, sh_type: 7, sh_flags: 2, sh_addr: 880, sh_offset: 880, sh_size: 36, sh_link: 0, sh_info: 0, sh_addralign: 4, sh_entsize: 0 }
-3: ".interp" ElfSectionHeader { sh_name: 65, sh_type: 1, sh_flags: 2, sh_addr: 916, sh_offset: 916, sh_size: 28, sh_link: 0, sh_info: 0, sh_addralign: 1, sh_entsize: 0 }
-4: ".gnu.hash" ElfSectionHeader { sh_name: 73, sh_type: 1879048182, sh_flags: 2, sh_addr: 944, sh_offset: 944, sh_size: 36, sh_link: 5, sh_info: 0, sh_addralign: 8, sh_entsize: 0 }
-5: ".dynsym" ElfSectionHeader { sh_name: 83, sh_type: 11, sh_flags: 2, sh_addr: 984, sh_offset: 984, sh_size: 168, sh_link: 6, sh_info: 1, sh_addralign: 8, sh_entsize: 24 }
-6: ".dynstr" ElfSectionHeader { sh_name: 91, sh_type: 3, sh_flags: 2, sh_addr: 1152, sh_offset: 1152, sh_size: 141, sh_link: 0, sh_info: 0, sh_addralign: 1, sh_entsize: 0 }
-7: ".gnu.version" ElfSectionHeader { sh_name: 99, sh_type: 1879048191, sh_flags: 2, sh_addr: 1294, sh_offset: 1294, sh_size: 14, sh_link: 5, sh_info: 0, sh_addralign: 2, sh_entsize: 2 }
-8: ".gnu.version_r" ElfSectionHeader { sh_name: 112, sh_type: 1879048190, sh_flags: 2, sh_addr: 1312, sh_offset: 1312, sh_size: 48, sh_link: 6, sh_info: 1, sh_addralign: 8, sh_entsize: 0 }
-9: ".rela.dyn" ElfSectionHeader { sh_name: 127, sh_type: 4, sh_flags: 2, sh_addr: 1360, sh_offset: 1360, sh_size: 192, sh_link: 5, sh_info: 0, sh_addralign: 8, sh_entsize: 24 }
-10: ".rela.plt" ElfSectionHeader { sh_name: 137, sh_type: 4, sh_flags: 66, sh_addr: 1552, sh_offset: 1552, sh_size: 24, sh_link: 5, sh_info: 24, sh_addralign: 8, sh_entsize: 24 }
-11: ".init" ElfSectionHeader { sh_name: 147, sh_type: 1, sh_flags: 6, sh_addr: 4096, sh_offset: 4096, sh_size: 23, sh_link: 0, sh_info: 0, sh_addralign: 4, sh_entsize: 0 }
-12: ".plt" ElfSectionHeader { sh_name: 142, sh_type: 1, sh_flags: 6, sh_addr: 4128, sh_offset: 4128, sh_size: 32, sh_link: 0, sh_info: 0, sh_addralign: 16, sh_entsize: 16 }
-13: ".plt.got" ElfSectionHeader { sh_name: 153, sh_type: 1, sh_flags: 6, sh_addr: 4160, sh_offset: 4160, sh_size: 8, sh_link: 0, sh_info: 0, sh_addralign: 8, sh_entsize: 8 }
-14: ".text" ElfSectionHeader { sh_name: 162, sh_type: 1, sh_flags: 6, sh_addr: 4176, sh_offset: 4176, sh_size: 259, sh_link: 0, sh_info: 0, sh_addralign: 16, sh_entsize: 0 }
-15: ".fini" ElfSectionHeader { sh_name: 168, sh_type: 1, sh_flags: 6, sh_addr: 4436, sh_offset: 4436, sh_size: 9, sh_link: 0, sh_info: 0, sh_addralign: 4, sh_entsize: 0 }
-16: ".rodata" ElfSectionHeader { sh_name: 174, sh_type: 1, sh_flags: 2, sh_addr: 8192, sh_offset: 8192, sh_size: 17, sh_link: 0, sh_info: 0, sh_addralign: 4, sh_entsize: 0 }
-17: ".eh_frame_hdr" ElfSectionHeader { sh_name: 182, sh_type: 1, sh_flags: 2, sh_addr: 8212, sh_offset: 8212, sh_size: 44, sh_link: 0, sh_info: 0, sh_addralign: 4, sh_entsize: 0 }
-18: ".eh_frame" ElfSectionHeader { sh_name: 196, sh_type: 1, sh_flags: 2, sh_addr: 8256, sh_offset: 8256, sh_size: 172, sh_link: 0, sh_info: 0, sh_addralign: 8, sh_entsize: 0 }
-19: ".note.ABI-tag" ElfSectionHeader { sh_name: 206, sh_type: 7, sh_flags: 2, sh_addr: 8428, sh_offset: 8428, sh_size: 32, sh_link: 0, sh_info: 0, sh_addralign: 4, sh_entsize: 0 }
-20: ".init_array" ElfSectionHeader { sh_name: 220, sh_type: 14, sh_flags: 3, sh_addr: 15824, sh_offset: 11728, sh_size: 8, sh_link: 0, sh_info: 0, sh_addralign: 8, sh_entsize: 8 }
-21: ".fini_array" ElfSectionHeader { sh_name: 232, sh_type: 15, sh_flags: 3, sh_addr: 15832, sh_offset: 11736, sh_size: 8, sh_link: 0, sh_info: 0, sh_addralign: 8, sh_entsize: 8 }
-22: ".dynamic" ElfSectionHeader { sh_name: 244, sh_type: 6, sh_flags: 3, sh_addr: 15840, sh_offset: 11744, sh_size: 480, sh_link: 6, sh_info: 0, sh_addralign: 8, sh_entsize: 16 }
-23: ".got" ElfSectionHeader { sh_name: 157, sh_type: 1, sh_flags: 3, sh_addr: 16320, sh_offset: 12224, sh_size: 40, sh_link: 0, sh_info: 0, sh_addralign: 8, sh_entsize: 8 }
-24: ".got.plt" ElfSectionHeader { sh_name: 253, sh_type: 1, sh_flags: 3, sh_addr: 16360, sh_offset: 12264, sh_size: 32, sh_link: 0, sh_info: 0, sh_addralign: 8, sh_entsize: 8 }
-25: ".data" ElfSectionHeader { sh_name: 262, sh_type: 1, sh_flags: 3, sh_addr: 16392, sh_offset: 12296, sh_size: 16, sh_link: 0, sh_info: 0, sh_addralign: 8, sh_entsize: 0 }
-26: ".bss" ElfSectionHeader { sh_name: 268, sh_type: 8, sh_flags: 3, sh_addr: 16408, sh_offset: 12312, sh_size: 8, sh_link: 0, sh_info: 0, sh_addralign: 1, sh_entsize: 0 }
-27: ".comment" ElfSectionHeader { sh_name: 273, sh_type: 1, sh_flags: 48, sh_addr: 0, sh_offset: 12312, sh_size: 31, sh_link: 0, sh_info: 0, sh_addralign: 1, sh_entsize: 1 }
-28: ".symtab" ElfSectionHeader { sh_name: 1, sh_type: 2, sh_flags: 0, sh_addr: 0, sh_offset: 12344, sh_size: 864, sh_link: 29, sh_info: 18, sh_addralign: 8, sh_entsize: 24 }
-29: ".strtab" ElfSectionHeader { sh_name: 9, sh_type: 3, sh_flags: 0, sh_addr: 0, sh_offset: 13208, sh_size: 475, sh_link: 0, sh_info: 0, sh_addralign: 1, sh_entsize: 0 }
-30: ".shstrtab" ElfSectionHeader { sh_name: 17, sh_type: 3, sh_flags: 0, sh_addr: 0, sh_offset: 13683, sh_size: 282, sh_link: 0, sh_info: 0, sh_addralign: 1, sh_entsize: 0 }
+name: 0 ""
+type: SHT_NULL
+flags: 
+addr: 0
+offset: 0
+size: 0
+link: 0
+info: 0
+addralign: 0
+entsize: 0
+
+name: 27 ".note.gnu.property"
+type: SHT_NOTE
+flags: SHF_ALLOC
+addr: 848
+offset: 848
+size: 32
+link: 0
+info: 0
+addralign: 8
+entsize: 0
+
+name: 46 ".note.gnu.build-id"
+type: SHT_NOTE
+flags: SHF_ALLOC
+addr: 880
+offset: 880
+size: 36
+link: 0
+info: 0
+addralign: 4
+entsize: 0
+
+name: 65 ".interp"
+type: SHT_PROGBITS
+flags: SHF_ALLOC
+addr: 916
+offset: 916
+size: 28
+link: 0
+info: 0
+addralign: 1
+entsize: 0
+
+name: 73 ".gnu.hash"
+type: SHT_OS(1879048182)
+flags: SHF_ALLOC
+addr: 944
+offset: 944
+size: 36
+link: 5
+info: 0
+addralign: 8
+entsize: 0
+
+name: 83 ".dynsym"
+type: SHT_DYNSYM
+flags: SHF_ALLOC
+addr: 984
+offset: 984
+size: 168
+link: 6
+info: 1
+addralign: 8
+entsize: 24
+
+name: 91 ".dynstr"
+type: SHT_STRTAB
+flags: SHF_ALLOC
+addr: 1152
+offset: 1152
+size: 141
+link: 0
+info: 0
+addralign: 1
+entsize: 0
+
+name: 99 ".gnu.version"
+type: SHT_OS(1879048191)
+flags: SHF_ALLOC
+addr: 1294
+offset: 1294
+size: 14
+link: 5
+info: 0
+addralign: 2
+entsize: 2
+
+name: 112 ".gnu.version_r"
+type: SHT_OS(1879048190)
+flags: SHF_ALLOC
+addr: 1312
+offset: 1312
+size: 48
+link: 6
+info: 1
+addralign: 8
+entsize: 0
+
+name: 127 ".rela.dyn"
+type: SHT_RELA
+flags: SHF_ALLOC
+addr: 1360
+offset: 1360
+size: 192
+link: 5
+info: 0
+addralign: 8
+entsize: 24
+
+name: 137 ".rela.plt"
+type: SHT_RELA
+flags: SHF_ALLOC | SHF_INFO_LINK
+addr: 1552
+offset: 1552
+size: 24
+link: 5
+info: 24
+addralign: 8
+entsize: 24
+
+name: 147 ".init"
+type: SHT_PROGBITS
+flags: SHF_ALLOC | SHF_EXECINSTR
+addr: 4096
+offset: 4096
+size: 23
+link: 0
+info: 0
+addralign: 4
+entsize: 0
+
+name: 142 ".plt"
+type: SHT_PROGBITS
+flags: SHF_ALLOC | SHF_EXECINSTR
+addr: 4128
+offset: 4128
+size: 32
+link: 0
+info: 0
+addralign: 16
+entsize: 16
+
+name: 153 ".plt.got"
+type: SHT_PROGBITS
+flags: SHF_ALLOC | SHF_EXECINSTR
+addr: 4160
+offset: 4160
+size: 8
+link: 0
+info: 0
+addralign: 8
+entsize: 8
+
+name: 162 ".text"
+type: SHT_PROGBITS
+flags: SHF_ALLOC | SHF_EXECINSTR
+addr: 4176
+offset: 4176
+size: 259
+link: 0
+info: 0
+addralign: 16
+entsize: 0
+
+name: 168 ".fini"
+type: SHT_PROGBITS
+flags: SHF_ALLOC | SHF_EXECINSTR
+addr: 4436
+offset: 4436
+size: 9
+link: 0
+info: 0
+addralign: 4
+entsize: 0
+
+name: 174 ".rodata"
+type: SHT_PROGBITS
+flags: SHF_ALLOC
+addr: 8192
+offset: 8192
+size: 17
+link: 0
+info: 0
+addralign: 4
+entsize: 0
+
+name: 182 ".eh_frame_hdr"
+type: SHT_PROGBITS
+flags: SHF_ALLOC
+addr: 8212
+offset: 8212
+size: 44
+link: 0
+info: 0
+addralign: 4
+entsize: 0
+
+name: 196 ".eh_frame"
+type: SHT_PROGBITS
+flags: SHF_ALLOC
+addr: 8256
+offset: 8256
+size: 172
+link: 0
+info: 0
+addralign: 8
+entsize: 0
+
+name: 206 ".note.ABI-tag"
+type: SHT_NOTE
+flags: SHF_ALLOC
+addr: 8428
+offset: 8428
+size: 32
+link: 0
+info: 0
+addralign: 4
+entsize: 0
+
+name: 220 ".init_array"
+type: SHT_INIT_ARRAY
+flags: SHF_WRITE | SHF_ALLOC
+addr: 15824
+offset: 11728
+size: 8
+link: 0
+info: 0
+addralign: 8
+entsize: 8
+
+name: 232 ".fini_array"
+type: SHT_FINI_ARRAY
+flags: SHF_WRITE | SHF_ALLOC
+addr: 15832
+offset: 11736
+size: 8
+link: 0
+info: 0
+addralign: 8
+entsize: 8
+
+name: 244 ".dynamic"
+type: SHT_DYNAMIC
+flags: SHF_WRITE | SHF_ALLOC
+addr: 15840
+offset: 11744
+size: 480
+link: 6
+info: 0
+addralign: 8
+entsize: 16
+
+name: 157 ".got"
+type: SHT_PROGBITS
+flags: SHF_WRITE | SHF_ALLOC
+addr: 16320
+offset: 12224
+size: 40
+link: 0
+info: 0
+addralign: 8
+entsize: 8
+
+name: 253 ".got.plt"
+type: SHT_PROGBITS
+flags: SHF_WRITE | SHF_ALLOC
+addr: 16360
+offset: 12264
+size: 32
+link: 0
+info: 0
+addralign: 8
+entsize: 8
+
+name: 262 ".data"
+type: SHT_PROGBITS
+flags: SHF_WRITE | SHF_ALLOC
+addr: 16392
+offset: 12296
+size: 16
+link: 0
+info: 0
+addralign: 8
+entsize: 0
+
+name: 268 ".bss"
+type: SHT_NOBITS
+flags: SHF_WRITE | SHF_ALLOC
+addr: 16408
+offset: 12312
+size: 8
+link: 0
+info: 0
+addralign: 1
+entsize: 0
+
+name: 273 ".comment"
+type: SHT_PROGBITS
+flags: SHF_MERGE | SHF_STRINGS
+addr: 0
+offset: 12312
+size: 31
+link: 0
+info: 0
+addralign: 1
+entsize: 1
+
+name: 1 ".symtab"
+type: SHT_SYMTAB
+flags: 
+addr: 0
+offset: 12344
+size: 864
+link: 29
+info: 18
+addralign: 8
+entsize: 24
+
+name: 9 ".strtab"
+type: SHT_STRTAB
+flags: 
+addr: 0
+offset: 13208
+size: 475
+link: 0
+info: 0
+addralign: 1
+entsize: 0
+
+name: 17 ".shstrtab"
+type: SHT_STRTAB
+flags: 
+addr: 0
+offset: 13683
+size: 282
+link: 0
+info: 0
+addralign: 1
+entsize: 0
+
