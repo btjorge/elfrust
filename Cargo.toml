@@ -5,8 +5,8 @@ edition = "2024"
 license = "MIT OR Apache-2.0"
 
 [dependencies]
-bitflags = "2.10.0"
-memmap2 = "0.9.9"
+bitflags = "2.11.0"
+memmap2 = "0.9.10"
 static_assertions = "1.1.0"
 strum_macros = "0.27.2"
 
