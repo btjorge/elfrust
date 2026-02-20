@@ -409,7 +409,7 @@ impl TryFrom<ElfProgHeaderRaw> for ElfProgHeader {
         Ok(
             ElfProgHeader {
                 p_type: SegmentType::try_from(r.p_type)?,
-                p_flags: SegmentFlags::from_bits(r.p_flags).ok_or("invalid flags")?,
+                p_flags: SegmentFlags::from_bits_retain(r.p_flags),
                 p_offset: r.p_offset,
                 p_vaddr:  r.p_vaddr,
                 p_paddr:  r.p_paddr,
@@ -546,7 +546,7 @@ impl TryFrom<ElfSectionHeaderRaw> for ElfSectionHeader {
 
     fn try_from(r: ElfSectionHeaderRaw) -> Result<Self, Self::Error> {
         let sh_type = SectionType::try_from(r.sh_type)?;
-        let sh_flags = SectionFlags::from_bits(r.sh_flags).ok_or("invalid flags")?;
+        let sh_flags = SectionFlags::from_bits_retain(r.sh_flags);
 
         Ok(
             ElfSectionHeader {
