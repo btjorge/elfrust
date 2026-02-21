@@ -62,7 +62,7 @@ pub struct EIdent {
     abiversion : u8,
 }
 
-use std::fmt::{self, Display};
+use std::fmt::{self, Display, Formatter};
 
 impl Display for EIdent {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -173,35 +173,8 @@ struct ElfHeaderRaw {
     e_shstrndx:  Half,
 }
 
-#[derive(Debug, Copy, Clone, AnyBitPattern)]
-#[repr(C)]
-pub struct ElfProgHeaderRaw {
-    pub p_type:   Word,
-    pub p_flags:  Word,
-    pub p_offset: Off,
-    pub p_vaddr:  Addr,
-    pub p_paddr:  Addr,
-    pub p_filesz: Xword,
-    pub p_memsz:  Xword,
-    pub p_align:  Xword,
-}
-
-#[derive(Debug, Copy, Clone, AnyBitPattern)]
-#[repr(C)]
-pub struct ElfSectionHeaderRaw {
-    pub sh_name:      Word,
-    pub sh_type:      Word,
-    pub sh_flags:     Xword,
-    pub sh_addr:      Addr,
-    pub sh_offset:    Off,
-    pub sh_size:      Xword,
-    pub sh_link:      Word,
-    pub sh_info:      Word,
-    pub sh_addralign: Xword,
-    pub sh_entsize:   Xword,
-}
-
-const_assert!(size_of::<ElfProgHeaderRaw>() % align_of::<ElfProgHeaderRaw>() == 0);
+const_assert!(size_of::<ElfProgHeader>() % align_of::<ElfProgHeader>() == 0);
+const_assert!(size_of::<ElfSectionHeader>() % align_of::<ElfSectionHeader>() == 0);
 
 impl ElfHeaderRaw {
     fn parse(buf: &[u8]) -> Self {
@@ -210,8 +183,8 @@ impl ElfHeaderRaw {
         let ret : Self = pod_read_unaligned(buf);
 
         assert_eq!(usize::from(ret.e_ehsize), size_of::<ElfHeaderRaw>());
-        assert_eq!(usize::from(ret.e_phentsize), size_of::<ElfProgHeaderRaw>());
-        assert_eq!(usize::from(ret.e_shentsize), size_of::<ElfSectionHeaderRaw>());
+        assert_eq!(usize::from(ret.e_phentsize), size_of::<ElfProgHeader>());
+        assert_eq!(usize::from(ret.e_shentsize), size_of::<ElfSectionHeader>());
 
         ret
     }
@@ -326,52 +299,42 @@ impl Display for ElfHeader {
     }
 }
 
-impl ElfProgHeaderRaw {
-    pub fn parse(buf: &[u8]) -> Self {
-        assert!(buf.len() >= size_of::<Self>());
-
-        pod_read_unaligned(buf)
-    }
-}
-
-#[allow(non_camel_case_types)]
-#[derive(Debug, PartialEq)]
-enum SegmentType {
-    PT_NULL,
-    PT_LOAD,
-    PT_DYNAMIC,
-    PT_INTERP,
-    PT_NOTE,
-    PT_SHLIB,
-    PT_PHDR,
-    PT_TLS,
-    PT_OS(Word),
-    PT_PROC(Word),
-}
+#[derive(Clone, Copy, PartialEq, AnyBitPattern)]
+#[repr(transparent)]
+struct SegmentType(Word);
 
 impl SegmentType {
-    const PT_LOOS   : Word = 0x60000000;
-    const PT_HIOS   : Word = 0x6fffffff;
-    const PT_LOPROC : Word = 0x70000000;
-    const PT_HIPROC : Word = 0x7fffffff;
+    const PT_NULL    : Word = 0;
+    const PT_LOAD    : Word = 1;
+    const PT_DYNAMIC : Word = 2;
+    const PT_INTERP  : Word = 3;
+    const PT_NOTE    : Word = 4;
+    const PT_SHLIB   : Word = 5;
+    const PT_PHDR    : Word = 6;
+    const PT_TLS     : Word = 7;
+
+    const PT_LOOS    : Word = 0x60000000;
+    const PT_HIOS    : Word = 0x6fffffff;
+    const PT_LOPROC  : Word = 0x70000000;
+    const PT_HIPROC  : Word = 0x7fffffff;
 }
 
-impl TryFrom<Word> for SegmentType {
-    type Error = &'static str;
+use fmt::Debug;
 
-    fn try_from(n: Word) -> Result<SegmentType, &'static str> {
-        match n {
-            0 => Ok(SegmentType::PT_NULL),
-            1 => Ok(SegmentType::PT_LOAD),
-            2 => Ok(SegmentType::PT_DYNAMIC),
-            3 => Ok(SegmentType::PT_INTERP),
-            4 => Ok(SegmentType::PT_NOTE),
-            5 => Ok(SegmentType::PT_SHLIB),
-            6 => Ok(SegmentType::PT_PHDR),
-            7 => Ok(SegmentType::PT_TLS),
-            Self::PT_LOOS..=Self::PT_HIOS => Ok(SegmentType::PT_OS(n)),
-            Self::PT_LOPROC..=Self::PT_HIPROC => Ok(SegmentType::PT_PROC(n)),
-            _ => Err("invalid segment type"),
+impl Debug for SegmentType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self.0 {
+            SegmentType::PT_NULL => write!(f, "PT_NULL"),
+            SegmentType::PT_LOAD => write!(f, "PT_LOAD"),
+            SegmentType::PT_DYNAMIC => write!(f, "PT_DYNAMIC"),
+            SegmentType::PT_INTERP => write!(f, "PT_INTERP"),
+            SegmentType::PT_NOTE => write!(f, "PT_NOTE"),
+            SegmentType::PT_SHLIB => write!(f, "PT_SHLIB"),
+            SegmentType::PT_PHDR => write!(f, "PT_PHDR"),
+            SegmentType::PT_TLS => write!(f, "PT_TLS"),
+            Self::PT_LOOS..=Self::PT_HIOS => write!(f, "PT_OS({})", self.0),
+            Self::PT_LOPROC..=Self::PT_HIPROC => write!(f, "PT_PROC({})", self.0),
+            _ => panic!("unsupported: {}", self.0),
         }
     }
 }
@@ -379,6 +342,8 @@ impl TryFrom<Word> for SegmentType {
 use bitflags::{bitflags, parser};
 
 bitflags! {
+    #[repr(transparent)]
+    #[derive(Clone, Copy, AnyBitPattern)]
     struct SegmentFlags: Word {
         const PF_X = 0x1;
         const PF_W = 0x2;
@@ -386,6 +351,11 @@ bitflags! {
     }
 }
 
+const_assert_eq!(size_of::<Word>(), size_of::<SegmentFlags>());
+const_assert_eq!(align_of::<Word>(), align_of::<SegmentFlags>());
+
+#[derive(Copy, Clone, AnyBitPattern)]
+#[repr(C)]
 pub struct ElfProgHeader {
     p_type:   SegmentType,
     p_flags:  SegmentFlags,
@@ -397,26 +367,11 @@ pub struct ElfProgHeader {
     p_align:  Xword,
 }
 
-impl TryFrom<ElfProgHeaderRaw> for ElfProgHeader {
-    type Error = &'static str;
-
-    fn try_from(r: ElfProgHeaderRaw) -> Result<ElfProgHeader, &'static str> {
-        Ok(
-            ElfProgHeader {
-                p_type: SegmentType::try_from(r.p_type)?,
-                p_flags: SegmentFlags::from_bits_retain(r.p_flags),
-                p_offset: r.p_offset,
-                p_vaddr:  r.p_vaddr,
-                p_paddr:  r.p_paddr,
-                p_filesz: r.p_filesz,
-                p_memsz:  r.p_memsz,
-                p_align:  r.p_align,
-            }
-        )
-    }
-}
-
 impl ElfProgHeader {
+    pub fn parse(buf: &[u8]) -> Self {
+        pod_read_unaligned(buf)
+    }
+
     #[expect(dead_code)] // TODO
     fn check(&self) -> Result<(), &str> {
         if self.p_align >= 2 &&
@@ -429,33 +384,30 @@ impl ElfProgHeader {
     }
 }
 
-#[allow(non_camel_case_types)]
-#[derive(Debug, PartialEq)]
-pub enum SectionType {
-    SHT_NULL,
-    SHT_PROGBITS,
-    SHT_SYMTAB,
-    SHT_STRTAB,
-    SHT_RELA,
-    SHT_HASH,
-    SHT_DYNAMIC,
-    SHT_NOTE,
-    SHT_NOBITS,
-    SHT_REL,
-    SHT_SHLIB,
-    SHT_DYNSYM,
-    SHT_INIT_ARRAY,
-    SHT_FINI_ARRAY,
-    SHT_PREINIT_ARRAY,
-    SHT_GROUP,
-    SHT_SYMTAB_SHNDX,
-    SHT_RELR,
-    SHT_OS(Word),
-    SHT_PROC(Word),
-    SHT_USER(Word),
-}
+#[derive(Clone, Copy, AnyBitPattern)]
+#[repr(transparent)]
+pub struct SectionType(Word);
 
 impl SectionType {
+    const SHT_NULL          : Word = 0;
+    const SHT_PROGBITS      : Word = 1;
+    const SHT_SYMTAB        : Word = 2;
+    const SHT_STRTAB        : Word = 3;
+    const SHT_RELA          : Word = 4;
+    const SHT_HASH          : Word = 5;
+    const SHT_DYNAMIC       : Word = 6;
+    const SHT_NOTE          : Word = 7;
+    const SHT_NOBITS        : Word = 8;
+    const SHT_REL           : Word = 9;
+    const SHT_SHLIB         : Word = 10;
+    const SHT_DYNSYM        : Word = 11;
+    const SHT_INIT_ARRAY    : Word = 14;
+    const SHT_FINI_ARRAY    : Word = 15;
+    const SHT_PREINIT_ARRAY : Word = 16;
+    const SHT_GROUP         : Word = 17;
+    const SHT_SYMTAB_SHNDX  : Word = 18;
+    const SHT_RELR          : Word = 19;
+
     const SHT_LOOS   : Word = 0x60000000;
     const SHT_HIOS   : Word = 0x6fffffff;
     const SHT_LOPROC : Word = 0x70000000;
@@ -464,39 +416,38 @@ impl SectionType {
     const SHT_HIUSER : Word = 0xffffffff;
 }
 
-impl TryFrom<Word> for SectionType {
-    type Error = &'static str;
-
-    fn try_from(n: Word) -> Result<Self, Self::Error> {
-        match n {
-            0 => Ok(SectionType::SHT_NULL),
-            1 => Ok(SectionType::SHT_PROGBITS),
-            2 => Ok(SectionType::SHT_SYMTAB),
-            3 => Ok(SectionType::SHT_STRTAB),
-            4 => Ok(SectionType::SHT_RELA),
-            5 => Ok(SectionType::SHT_HASH),
-            6 => Ok(SectionType::SHT_DYNAMIC),
-            7 => Ok(SectionType::SHT_NOTE),
-            8 => Ok(SectionType::SHT_NOBITS),
-            9 => Ok(SectionType::SHT_REL),
-            10 => Ok(SectionType::SHT_SHLIB),
-            11 => Ok(SectionType::SHT_DYNSYM),
-            14 => Ok(SectionType::SHT_INIT_ARRAY),
-            15 => Ok(SectionType::SHT_FINI_ARRAY),
-            16 => Ok(SectionType::SHT_PREINIT_ARRAY),
-            17 => Ok(SectionType::SHT_GROUP),
-            18 => Ok(SectionType::SHT_SYMTAB_SHNDX),
-            19 => Ok(SectionType::SHT_RELR),
-            Self::SHT_LOOS..=Self::SHT_HIOS => Ok(Self::SHT_OS(n)),
-            Self::SHT_LOPROC..=Self::SHT_HIPROC => Ok(Self::SHT_PROC(n)),
-            Self::SHT_LOUSER..=Self::SHT_HIUSER => Ok(Self::SHT_USER(n)),
-            _ => Err("invalid section type"),
+impl Debug for SectionType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self.0 {
+            Self::SHT_NULL => write!(f, "SHT_NULL"),
+            Self::SHT_PROGBITS => write!(f, "SHT_PROGBITS"),
+            Self::SHT_SYMTAB => write!(f, "SHT_SYMTAB"),
+            Self::SHT_STRTAB => write!(f, "SHT_STRTAB"),
+            Self::SHT_RELA => write!(f, "SHT_RELA"),
+            Self::SHT_HASH => write!(f, "SHT_HASH"),
+            Self::SHT_DYNAMIC => write!(f, "SHT_DYNAMIC"),
+            Self::SHT_NOTE => write!(f, "SHT_NOTE"),
+            Self::SHT_NOBITS => write!(f, "SHT_NOBITS"),
+            Self::SHT_REL => write!(f, "SHT_REL"),
+            Self::SHT_SHLIB => write!(f, "SHT_SHLIB"),
+            Self::SHT_DYNSYM => write!(f, "SHT_DYNSYM"),
+            Self::SHT_INIT_ARRAY => write!(f, "SHT_INIT_ARRAY"),
+            Self::SHT_FINI_ARRAY => write!(f, "SHT_FINI_ARRAY"),
+            Self::SHT_PREINIT_ARRAY => write!(f, "SHT_PREINIT_ARRAY"),
+            Self::SHT_GROUP => write!(f, "SHT_GROUP"),
+            Self::SHT_SYMTAB_SHNDX => write!(f, "SHT_SYMTAB_SHNDX"),
+            Self::SHT_RELR => write!(f, "SHT_RELR"),
+            Self::SHT_LOOS..=Self::SHT_HIOS => write!(f, "SHT_OS({})", self.0),
+            Self::SHT_LOPROC..=Self::SHT_HIPROC => write!(f, "SHT_PROC({})", self.0),
+            Self::SHT_LOUSER..=Self::SHT_HIUSER => write!(f, "SHT_USER({})", self.0),
+            _ => panic!("unsupported: {}", self.0),
         }
     }
 }
 
 bitflags! {
-    #[derive(Debug, PartialEq)]
+    #[derive(Debug, PartialEq, Clone, Copy, AnyBitPattern)]
+    #[repr(transparent)]
     pub struct SectionFlags: Xword {
         const SHF_WRITE            = 0x1;
         const SHF_ALLOC            = 0x2;
@@ -512,7 +463,11 @@ bitflags! {
     }
 }
 
-#[derive(Debug)]
+const_assert_eq!(size_of::<Xword>(), size_of::<SectionFlags>());
+const_assert_eq!(align_of::<Xword>(), align_of::<SectionFlags>());
+
+#[derive(Debug, Clone, Copy, AnyBitPattern)]
+#[repr(C)]
 pub struct ElfSectionHeader {
     pub sh_name:      Word,
     pub sh_type:      SectionType,
@@ -526,35 +481,11 @@ pub struct ElfSectionHeader {
     pub sh_entsize:   Xword,
 }
 
-impl ElfSectionHeaderRaw {
+impl ElfSectionHeader {
     pub fn parse(buf: &[u8]) -> Self {
         assert!(buf.len() >= size_of::<Self>());
 
         pod_read_unaligned(buf)
-    }
-}
-
-impl TryFrom<ElfSectionHeaderRaw> for ElfSectionHeader {
-    type Error =  &'static str;
-
-    fn try_from(r: ElfSectionHeaderRaw) -> Result<Self, Self::Error> {
-        let sh_type = SectionType::try_from(r.sh_type)?;
-        let sh_flags = SectionFlags::from_bits_retain(r.sh_flags);
-
-        Ok(
-            ElfSectionHeader {
-                sh_name: r.sh_name,
-                sh_type,
-                sh_flags,
-                sh_addr: r.sh_addr,
-                sh_offset: r.sh_offset,
-                sh_size: r.sh_size,
-                sh_link: r.sh_link,
-                sh_info: r.sh_info,
-                sh_addralign: r.sh_addralign,
-                sh_entsize: r.sh_entsize,
-            }
-        )
     }
 }
 
@@ -608,17 +539,17 @@ impl ElfFile {
         Ok(ElfFile { ident, header, mmap })
     }
 
-    fn get_section_from_index(&self, idx: Half) -> Result<ElfSectionHeader, &'static str> {
+    fn get_section_from_index(&self, idx: Half) -> ElfSectionHeader {
         let off = self.header.e_shoff + u64::from(idx) * u64::from (self.header.e_shentsize);
-        ElfSectionHeader::try_from(ElfSectionHeaderRaw::parse(self.mmap.offlen(off, self.header.e_shentsize)))
+        ElfSectionHeader::parse(self.mmap.offlen(off, self.header.e_shentsize))
     }
 
     fn get_section_name_table(&self) -> &[u8] {
         let idx = self.header.e_shstrndx;
         assert_ne!(idx, SHN_UNDEF);
         assert!(idx < SHN_LORESERVE);
-        let hsection = self.get_section_from_index(idx).unwrap();
-        assert_eq!(SectionType::SHT_STRTAB, hsection.sh_type); /* STRTAB */
+        let hsection = self.get_section_from_index(idx);
+        assert_eq!(SectionType::SHT_STRTAB, hsection.sh_type.0); /* STRTAB */
         assert_eq!(SectionFlags::empty(), hsection.sh_flags); /* none */
         assert_eq!(0, hsection.sh_addr); /* not in memory */
         assert!(hsection.sh_addralign <= 1);
@@ -640,7 +571,7 @@ impl ElfFile {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 let h = self.header;
                 write!(f, "type:   {:?}", h.p_type)?;
-                if h.p_type == SegmentType::PT_INTERP {
+                if h.p_type.0 == SegmentType::PT_INTERP {
                     let interp = CStr::from_bytes_until_nul(self.file.mmap.offset(h.p_offset)).expect("invalid interp section");
                     assert_eq!(interp.count_bytes() + 1, h.p_filesz.try_into().unwrap());
                     write!(f, " ({:?})", interp)?;
