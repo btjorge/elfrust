@@ -354,6 +354,14 @@ bitflags! {
 const_assert_eq!(size_of::<Word>(), size_of::<SegmentFlags>());
 const_assert_eq!(align_of::<Word>(), align_of::<SegmentFlags>());
 
+impl Display for SegmentFlags {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f,"{{")?;
+        parser::to_writer(self, &mut *f)?;
+        write!(f,"}}")
+    }
+}
+
 #[derive(Copy, Clone, AnyBitPattern)]
 #[repr(C)]
 pub struct ElfProgHeader {
@@ -466,6 +474,14 @@ bitflags! {
 const_assert_eq!(size_of::<Xword>(), size_of::<SectionFlags>());
 const_assert_eq!(align_of::<Xword>(), align_of::<SectionFlags>());
 
+impl Display for SectionFlags {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f,"{{")?;
+        parser::to_writer(self, &mut *f)?;
+        write!(f,"}}")
+    }
+}
+
 #[derive(Debug, Clone, Copy, AnyBitPattern)]
 #[repr(C)]
 pub struct ElfSectionHeader {
@@ -576,9 +592,7 @@ impl ElfFile {
                     assert_eq!(interp.count_bytes() + 1, h.p_filesz.try_into().unwrap());
                     write!(f, " ({:?})", interp)?;
                 };
-                write!(f, "\nflags:  ")?;
-                parser::to_writer(&h.p_flags, &mut *f)?;
-                writeln!(f, "")?;
+                writeln!(f, "\nflags:  {}", h.p_flags)?;
                 writeln!(f, "offset: {:?}", h.p_offset)?;
                 writeln!(f, "vaddr:  {:?}", h.p_vaddr)?;
                 writeln!(f, "paddr:  {:?}", h.p_paddr)?;
@@ -601,9 +615,7 @@ impl ElfFile {
                 writeln!(f, "name: {} {:?}", h.sh_name,
                          self.file.get_section_name(h.sh_name))?;
                 writeln!(f, "type: {:?}", h.sh_type)?;
-                write!(f, "flags: ")?;
-                parser::to_writer(&h.sh_flags, &mut *f)?;
-                writeln!(f, "")?;
+                writeln!(f, "flags: {}", h.sh_flags)?;
                 writeln!(f, "addr: {:?}", h.sh_addr)?;
                 writeln!(f, "offset: {:?}", h.sh_offset)?;
                 writeln!(f, "size: {:?}", h.sh_size)?;
