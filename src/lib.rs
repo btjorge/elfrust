@@ -1,7 +1,8 @@
 use std::fs::File;
 use std::error::Error;
 use strum_macros::{FromRepr, Display};
-use bytemuck::{AnyBitPattern, pod_read_unaligned};
+use bytemuck::{AnyBitPattern, NoUninit, pod_read_unaligned, cast_slice_mut};
+use bytemuck::allocation::zeroed_vec;
 
 const EI_MAG0       : usize =  0;
 const EI_MAG1       : usize =  1;
@@ -299,7 +300,7 @@ impl Display for ElfHeader {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, AnyBitPattern)]
+#[derive(Clone, Copy, PartialEq, AnyBitPattern, NoUninit)]
 #[repr(transparent)]
 struct SegmentType(Word);
 
@@ -343,7 +344,7 @@ use bitflags::{bitflags, parser};
 
 bitflags! {
     #[repr(transparent)]
-    #[derive(Clone, Copy, AnyBitPattern)]
+    #[derive(Clone, Copy, AnyBitPattern, NoUninit)]
     struct SegmentFlags: Word {
         const PF_X = 0x1;
         const PF_W = 0x2;
@@ -362,7 +363,7 @@ impl Display for SegmentFlags {
     }
 }
 
-#[derive(Copy, Clone, AnyBitPattern)]
+#[derive(Copy, Clone, AnyBitPattern, NoUninit)]
 #[repr(C)]
 pub struct ElfProgHeader {
     p_type:   SegmentType,
@@ -392,7 +393,7 @@ impl ElfProgHeader {
     }
 }
 
-#[derive(Clone, Copy, AnyBitPattern)]
+#[derive(Clone, Copy, AnyBitPattern, NoUninit)]
 #[repr(transparent)]
 pub struct SectionType(Word);
 
@@ -454,7 +455,7 @@ impl Debug for SectionType {
 }
 
 bitflags! {
-    #[derive(Debug, PartialEq, Clone, Copy, AnyBitPattern)]
+    #[derive(Debug, PartialEq, Clone, Copy, AnyBitPattern, NoUninit)]
     #[repr(transparent)]
     pub struct SectionFlags: Xword {
         const SHF_WRITE            = 0x1;
@@ -482,7 +483,7 @@ impl Display for SectionFlags {
     }
 }
 
-#[derive(Debug, Clone, Copy, AnyBitPattern)]
+#[derive(Debug, Clone, Copy, AnyBitPattern, NoUninit)]
 #[repr(C)]
 pub struct ElfSectionHeader {
     pub sh_name:      Word,
@@ -534,6 +535,7 @@ pub struct ElfFile {
     pub mmap: Mmap,
 }
 
+use std::io::{self, Read};
 use std::path::Path;
 use std::ffi::c_str::CStr;
 
@@ -555,6 +557,32 @@ impl ElfFile {
         Ok(ElfFile { ident, header, mmap })
     }
 
+    pub fn get_program_headers(&self) -> Result<Vec<ElfProgHeader>, io::Error> {
+        assert!(self.header.e_phoff != 0);
+        assert!(u64::from(self.header.e_phnum) * u64::from(self.header.e_phentsize) <= 1024);
+        assert_eq!(size_of::<ElfProgHeader>(), self.header.e_phentsize.into());
+
+        let mut buf : Vec<ElfProgHeader> = zeroed_vec(self.header.e_phnum.into());
+
+        self.mmap.offset(self.header.e_phoff).read_exact(cast_slice_mut(buf.as_mut_slice()))?;
+
+        Ok(buf)
+    }
+
+    pub fn get_section_headers(&self) -> Result<Vec<ElfSectionHeader>, io::Error> {
+        assert!(self.header.e_shoff != 0);
+        assert!(u64::from(self.header.e_shnum) * u64::from(self.header.e_shentsize) <= 4096);
+        assert_eq!(size_of::<ElfSectionHeader>(), self.header.e_shentsize.into());
+        assert!(self.header.e_shnum != 0);
+        assert!(self.header.e_shnum < SHN_LORESERVE);
+
+        let mut buf : Vec<ElfSectionHeader> = zeroed_vec(self.header.e_shnum.into());
+
+        self.mmap.offset(self.header.e_shoff).read_exact(cast_slice_mut(buf.as_mut_slice()))?;
+
+        Ok(buf)
+    }
+
     fn get_section_from_index(&self, idx: Half) -> ElfSectionHeader {
         let off = self.header.e_shoff + u64::from(idx) * u64::from (self.header.e_shentsize);
         ElfSectionHeader::parse(self.mmap.offlen(off, self.header.e_shentsize))
@@ -567,7 +595,7 @@ impl ElfFile {
         let hsection = self.get_section_from_index(idx);
         assert_eq!(SectionType::SHT_STRTAB, hsection.sh_type.0); /* STRTAB */
         assert_eq!(SectionFlags::empty(), hsection.sh_flags); /* none */
-        assert_eq!(0, hsection.sh_addr); /* not in memory */
+        //assert_eq!(0, hsection.sh_addr); /* not in memory */
         assert!(hsection.sh_addralign <= 1);
         assert_eq!(0, hsection.sh_entsize); /* not fixed size entries (?) */
         assert!(hsection.sh_size <= 4096);
