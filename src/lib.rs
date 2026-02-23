@@ -1,8 +1,10 @@
 use std::fs::File;
 use std::mem::offset_of;
 use std::error::Error;
+use std::os::unix::fs::FileExt;
+use std::fmt::{self, Display, Formatter};
 use strum_macros::{FromRepr, Display};
-use bytemuck::{AnyBitPattern, CheckedBitPattern, NoUninit, Zeroable, cast_slice_mut, pod_read_unaligned};
+use bytemuck::{AnyBitPattern, CheckedBitPattern, Contiguous, NoUninit, Zeroable, bytes_of_mut, cast_slice_mut, pod_read_unaligned};
 use bytemuck::checked::{self, CheckedCastError};
 use bytemuck::allocation::zeroed_vec;
 
@@ -55,7 +57,7 @@ enum ElfData {
 }
 
 #[allow(non_camel_case_types)]
-#[derive(FromRepr, Debug, Display, PartialEq, Default, Copy, Clone, CheckedBitPattern, Zeroable)]
+#[derive(FromRepr, Debug, Display, PartialEq, Default, Copy, Clone, CheckedBitPattern, Contiguous, Zeroable)]
 #[repr(u8)]
 pub enum ElfVersion {
     #[default]
@@ -91,8 +93,6 @@ impl Default for EIdent {
     }
 }
 
-use std::fmt::{self, Display, Formatter};
-
 impl Display for EIdent {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "Elf Class: {}", self.ei_class)?;
@@ -108,6 +108,7 @@ use static_assertions::{const_assert, const_assert_eq};
 const_assert!(cfg!(target_endian = "little"));
 
 impl EIdent {
+    #[allow(dead_code)]
     fn parse(buf: &[u8]) -> Result<EIdent, &'static str> {
         match checked::try_pod_read_unaligned::<Self>(buf) {
             Ok(ret) => {
@@ -213,7 +214,7 @@ pub struct ElfHeader {
     pub e_ident:     EIdent,
     pub e_type:      ElfType,
     pub e_machine:   Half,
-    pub e_version:   ElfVersion,
+    pub e_version:   Word,
     pub e_entry:     Addr,
     pub e_phoff:     Off,
     pub e_shoff:     Off,
@@ -227,14 +228,18 @@ pub struct ElfHeader {
 }
 
 impl ElfHeader {
+    #[allow(dead_code)]
     fn parse(buf: &[u8]) -> Result<Self, &'static str> {
-        assert!(buf.len() >= size_of::<Self>());
+        assert!(buf.len() == size_of::<Self>());
 
         match checked::try_pod_read_unaligned::<Self>(buf) {
             Ok(ret) => {
+                ret.e_ident.validate()?;
 
                 assert!(ret.e_shnum < SHN_LORESERVE);
                 assert!(ret.e_shstrndx < SHN_LORESERVE);
+
+                assert_eq!(ret.e_version, ret.e_ident.ei_version.into_integer().into());
 
                 assert_eq!(usize::from(ret.e_ehsize), size_of::<ElfHeader>());
                 assert_eq!(usize::from(ret.e_phentsize), size_of::<ElfProgHeader>());
@@ -494,35 +499,45 @@ impl OffLen<u8> for [u8] {
     }
 }
 
-use memmap2::Mmap;
-
 pub struct ElfFile {
     pub ident: EIdent,
     pub header: ElfHeader,
-    pub mmap: Mmap,
+    pub file: File,
 }
 
-use std::io::{self, Read};
+use std::io;
 use std::path::Path;
-use std::ffi::c_str::CStr;
+use std::ffi::c_str::{CStr, CString};
 
 const SHN_UNDEF : u16 = 0;
 pub const SHN_LORESERVE : u16 = 0xff00;
 
+#[derive(Debug)]
+struct StringError<'a>(&'a str);
+
+impl Display for StringError<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl Error for StringError<'_> {}
+
 impl ElfFile {
+    pub fn read_elf_header(f: &File) -> Result<ElfHeader, Box<dyn Error>> {
+        let mut buf = [0u8; size_of::<ElfHeader>()];
+
+        f.read_exact_at(&mut buf, 0)?;
+
+        ElfHeader::parse(&buf).map_err(|s| Box::new(StringError(s)) as Box<dyn Error>)
+    }
+
     pub fn open<P: AsRef<Path>>(p: P) -> Result<ElfFile, Box<dyn Error>> {
         let f = File::open(p)?;
-        let mmap = unsafe { Mmap::map(&f)? };
 
-        let ident = EIdent::parse(mmap.offlen(0u32, EI_NIDENT as u64))?;
+        let header = Self::read_elf_header(&f)?;
 
-        ident.validate()?;
-
-        let header = ElfHeader::parse(&mmap[0..size_of::<ElfHeader>()])?;
-
-        assert_eq!(ident, header.e_ident);
-
-        Ok(ElfFile { ident, header, mmap })
+        Ok(ElfFile { ident: header.e_ident, header: header, file: f })
     }
 
     pub fn get_program_headers(&self) -> Result<Vec<ElfProgHeader>, io::Error> {
@@ -532,7 +547,7 @@ impl ElfFile {
 
         let mut buf : Vec<ElfProgHeader> = zeroed_vec(self.header.e_phnum.into());
 
-        self.mmap.offset(self.header.e_phoff).read_exact(cast_slice_mut(buf.as_mut_slice()))?;
+        self.file.read_exact_at(cast_slice_mut(buf.as_mut_slice()), self.header.e_phoff)?;
 
         Ok(buf)
     }
@@ -546,21 +561,23 @@ impl ElfFile {
 
         let mut buf : Vec<ElfSectionHeader> = zeroed_vec(self.header.e_shnum.into());
 
-        self.mmap.offset(self.header.e_shoff).read_exact(cast_slice_mut(buf.as_mut_slice()))?;
+        self.file.read_exact_at(cast_slice_mut(buf.as_mut_slice()), self.header.e_shoff)?;
 
         Ok(buf)
     }
 
-    fn get_section_from_index(&self, idx: Half) -> ElfSectionHeader {
+    fn get_section_from_index(&self, idx: Half) -> io::Result<ElfSectionHeader> {
         let off = self.header.e_shoff + u64::from(idx) * u64::from (self.header.e_shentsize);
-        ElfSectionHeader::parse(self.mmap.offlen(off, self.header.e_shentsize))
+        let mut buf = ElfSectionHeader::zeroed();
+        self.file.read_exact_at(bytes_of_mut(&mut buf), off)?;
+        Ok(buf)
     }
 
-    fn get_section_name_table(&self) -> &[u8] {
+    fn get_section_name_table(&self) -> io::Result<Vec<u8>> {
         let idx = self.header.e_shstrndx;
         assert_ne!(idx, SHN_UNDEF);
         assert!(idx < SHN_LORESERVE);
-        let hsection = self.get_section_from_index(idx);
+        let hsection = self.get_section_from_index(idx)?;
         assert_eq!(SectionType::SHT_STRTAB, hsection.sh_type.0); /* STRTAB */
         assert_eq!(SectionFlags::empty(), hsection.sh_flags); /* none */
         //assert_eq!(0, hsection.sh_addr); /* not in memory */
@@ -568,12 +585,14 @@ impl ElfFile {
         assert_eq!(0, hsection.sh_entsize); /* not fixed size entries (?) */
         assert!(hsection.sh_size <= 4096);
 
-        self.mmap.offlen(hsection.sh_offset, hsection.sh_size)
+        let mut buf = vec!(0u8; hsection.sh_size.try_into().unwrap());
+        self.file.read_exact_at(&mut buf, hsection.sh_offset)?;
+        Ok(buf)
     }
 
-    pub fn get_section_name(&self, idx: Word) -> &CStr {
-        let table = self.get_section_name_table();
-        CStr::from_bytes_until_nul(table.offset(idx)).expect("invalid string section")
+    pub fn get_section_name(&self, idx: Word) -> io::Result<CString> {
+        let table = self.get_section_name_table()?;
+        Ok(CStr::from_bytes_until_nul(table.offset(idx)).expect("invalid string section").to_owned())
     }
 
     pub fn fmt_prog_header(&self, h: &ElfProgHeader) -> impl Display {
@@ -584,9 +603,9 @@ impl ElfFile {
                 let h = self.header;
                 write!(f, "type:   {:?}", h.p_type)?;
                 if h.p_type.0 == SegmentType::PT_INTERP {
-                    let interp = CStr::from_bytes_until_nul(self.file.mmap.offset(h.p_offset)).expect("invalid interp section");
-                    assert_eq!(interp.count_bytes() + 1, h.p_filesz.try_into().unwrap());
-                    write!(f, " ({:?})", interp)?;
+                    let mut buf = vec!(0u8; h.p_filesz.try_into().unwrap());
+                    self.file.file.read_exact_at(&mut buf, h.p_offset).unwrap();
+                    write!(f, " ({:?})", CStr::from_bytes_with_nul(&buf).expect("invalid interp section"))?;
                 };
                 writeln!(f, "\nflags:  {}", h.p_flags)?;
                 writeln!(f, "offset: {:?}", h.p_offset)?;
@@ -609,7 +628,7 @@ impl ElfFile {
                 let h = self.header;
 
                 writeln!(f, "name: {} {:?}", h.sh_name,
-                         self.file.get_section_name(h.sh_name))?;
+                         self.file.get_section_name(h.sh_name).unwrap())?;
                 writeln!(f, "type: {:?}", h.sh_type)?;
                 writeln!(f, "flags: {}", h.sh_flags)?;
                 writeln!(f, "addr: {:?}", h.sh_addr)?;
