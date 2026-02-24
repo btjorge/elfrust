@@ -4,7 +4,7 @@ use std::error::Error;
 use std::os::unix::fs::FileExt;
 use std::fmt::{self, Display, Formatter};
 use strum_macros::{FromRepr, Display};
-use bytemuck::{AnyBitPattern, CheckedBitPattern, Contiguous, NoUninit, Zeroable, bytes_of_mut, cast_slice_mut, pod_read_unaligned};
+use bytemuck::{AnyBitPattern, CheckedBitPattern, Contiguous, NoUninit, Zeroable, cast_slice_mut, pod_read_unaligned};
 use bytemuck::checked::{self, CheckedCastError};
 use bytemuck::allocation::zeroed_vec;
 
@@ -502,12 +502,15 @@ impl OffLen<u8> for [u8] {
 pub struct ElfFile {
     pub ident: EIdent,
     pub header: ElfHeader,
+    pub program_headers: Vec<ElfProgHeader>,
+    pub section_headers: Vec<ElfSectionHeader>,
+    pub section_names: Option<Vec<u8>>,
     pub file: File,
 }
 
 use std::io;
 use std::path::Path;
-use std::ffi::c_str::{CStr, CString};
+use std::ffi::c_str::CStr;
 
 const SHN_UNDEF : u16 = 0;
 pub const SHN_LORESERVE : u16 = 0xff00;
@@ -523,6 +526,8 @@ impl Display for StringError<'_> {
 
 impl Error for StringError<'_> {}
 
+const SIZE: u64 = 32768;
+
 impl ElfFile {
     pub fn read_elf_header(f: &File) -> Result<ElfHeader, Box<dyn Error>> {
         let mut buf = [0u8; size_of::<ElfHeader>()];
@@ -533,66 +538,80 @@ impl ElfFile {
     }
 
     pub fn open<P: AsRef<Path>>(p: P) -> Result<ElfFile, Box<dyn Error>> {
-        let f = File::open(p)?;
+        let file = File::open(p)?;
 
-        let header = Self::read_elf_header(&f)?;
+        let header = Self::read_elf_header(&file)?;
+        let program_headers = Self::read_program_headers(header, &file)?;
+        let section_headers = Self::read_section_headers(header, &file)?;
 
-        Ok(ElfFile { ident: header.e_ident, header: header, file: f })
+        let section_names = Self::read_section_name_table(header, &section_headers[..], &file)?;
+
+        Ok(ElfFile {
+            ident: header.e_ident,
+            header,
+            program_headers,
+            section_headers,
+            section_names,
+            file
+        })
     }
 
-    pub fn get_program_headers(&self) -> Result<Vec<ElfProgHeader>, io::Error> {
-        assert!(self.header.e_phoff != 0);
-        assert!(u64::from(self.header.e_phnum) * u64::from(self.header.e_phentsize) <= 1024);
-        assert_eq!(size_of::<ElfProgHeader>(), self.header.e_phentsize.into());
+    fn read_program_headers(header: ElfHeader, file: &File) -> Result<Vec<ElfProgHeader>, io::Error> {
+        if header.e_phoff == 0 {
+            assert_eq!(0, header.e_phnum); /* extra conformity check */
+            return Ok(Vec::new())
+        }
 
-        let mut buf : Vec<ElfProgHeader> = zeroed_vec(self.header.e_phnum.into());
+        assert!(header.e_phoff != 0);
+        assert!(u64::from(header.e_phnum) * u64::from(header.e_phentsize) <= SIZE);
+        assert_eq!(size_of::<ElfProgHeader>(), header.e_phentsize.into());
 
-        self.file.read_exact_at(cast_slice_mut(buf.as_mut_slice()), self.header.e_phoff)?;
+        let mut buf : Vec<ElfProgHeader> = zeroed_vec(header.e_phnum.into());
+
+        file.read_exact_at(cast_slice_mut(buf.as_mut_slice()), header.e_phoff)?;
 
         Ok(buf)
     }
 
-    pub fn get_section_headers(&self) -> Result<Vec<ElfSectionHeader>, io::Error> {
-        assert!(self.header.e_shoff != 0);
-        assert!(u64::from(self.header.e_shnum) * u64::from(self.header.e_shentsize) <= 4096);
-        assert_eq!(size_of::<ElfSectionHeader>(), self.header.e_shentsize.into());
-        assert!(self.header.e_shnum != 0);
-        assert!(self.header.e_shnum < SHN_LORESERVE);
+    fn read_section_headers(header: ElfHeader, file: &File) -> Result<Vec<ElfSectionHeader>, io::Error> {
+        if header.e_shoff == 0 {
+            assert_eq!(0, header.e_shnum); /* extra conformity check */
+            return Ok(Vec::new())
+        }
 
-        let mut buf : Vec<ElfSectionHeader> = zeroed_vec(self.header.e_shnum.into());
+        assert!(header.e_shoff != 0);
+        assert!(u64::from(header.e_shnum) * u64::from(header.e_shentsize) <= SIZE);
+        assert_eq!(size_of::<ElfSectionHeader>(), header.e_shentsize.into());
+        assert!(header.e_shnum != 0); /* valid, not supported yet */
+        assert!(header.e_shnum < SHN_LORESERVE);
 
-        self.file.read_exact_at(cast_slice_mut(buf.as_mut_slice()), self.header.e_shoff)?;
+        let mut buf : Vec<ElfSectionHeader> = zeroed_vec(header.e_shnum.into());
+
+        file.read_exact_at(cast_slice_mut(buf.as_mut_slice()), header.e_shoff)?;
 
         Ok(buf)
     }
 
-    fn get_section_from_index(&self, idx: Half) -> io::Result<ElfSectionHeader> {
-        let off = self.header.e_shoff + u64::from(idx) * u64::from (self.header.e_shentsize);
-        let mut buf = ElfSectionHeader::zeroed();
-        self.file.read_exact_at(bytes_of_mut(&mut buf), off)?;
-        Ok(buf)
-    }
-
-    fn get_section_name_table(&self) -> io::Result<Vec<u8>> {
-        let idx = self.header.e_shstrndx;
+    fn read_section_name_table(header: ElfHeader, sections: &[ElfSectionHeader], file: &File) -> io::Result<Option<Vec<u8>>> {
+        let idx = header.e_shstrndx;
         assert_ne!(idx, SHN_UNDEF);
         assert!(idx < SHN_LORESERVE);
-        let hsection = self.get_section_from_index(idx)?;
+        let hsection = sections[usize::from(idx)];
         assert_eq!(SectionType::SHT_STRTAB, hsection.sh_type.0); /* STRTAB */
         assert_eq!(SectionFlags::empty(), hsection.sh_flags); /* none */
         //assert_eq!(0, hsection.sh_addr); /* not in memory */
         assert!(hsection.sh_addralign <= 1);
         assert_eq!(0, hsection.sh_entsize); /* not fixed size entries (?) */
-        assert!(hsection.sh_size <= 4096);
+        assert!(hsection.sh_size <= SIZE);
 
         let mut buf = vec!(0u8; hsection.sh_size.try_into().unwrap());
-        self.file.read_exact_at(&mut buf, hsection.sh_offset)?;
-        Ok(buf)
+        file.read_exact_at(&mut buf, hsection.sh_offset)?;
+        Ok(Some(buf))
     }
 
-    pub fn get_section_name(&self, idx: Word) -> io::Result<CString> {
-        let table = self.get_section_name_table()?;
-        Ok(CStr::from_bytes_until_nul(table.offset(idx)).expect("invalid string section").to_owned())
+    pub fn get_section_name(&self, idx: Word) -> &CStr {
+        let table = self.section_names.as_ref().unwrap();
+        CStr::from_bytes_until_nul(table.offset(idx)).expect("invalid string section")
     }
 
     pub fn fmt_prog_header(&self, h: &ElfProgHeader) -> impl Display {
@@ -628,7 +647,7 @@ impl ElfFile {
                 let h = self.header;
 
                 writeln!(f, "name: {} {:?}", h.sh_name,
-                         self.file.get_section_name(h.sh_name).unwrap())?;
+                         self.file.get_section_name(h.sh_name))?;
                 writeln!(f, "type: {:?}", h.sh_type)?;
                 writeln!(f, "flags: {}", h.sh_flags)?;
                 writeln!(f, "addr: {:?}", h.sh_addr)?;

@@ -1,34 +1,23 @@
-use std::{env, io};
+use std::env;
 use std::error::Error;
 use elfrust::{self, ElfFile};
 
-fn print_segments (f: &ElfFile) -> Result<(), io::Error> {
-    if f.header.e_phoff != 0 {
-        assert_ne!(0, f.header.e_phnum);
-
-        for h in f.get_program_headers()? {
+fn print_segments (f: &ElfFile) {
+    let ph = &f.program_headers;
+    if ! ph.is_empty() {
+        for h in ph {
             println!("{}", f.fmt_prog_header(&h));
         }
-    } else {
-        assert_eq!(0, f.header.e_phnum); /* extra conformity check */
     }
-
-    Ok(())
 }
 
-fn print_sections(f: &ElfFile) -> Result<(), io::Error> {
-    if f.header.e_shoff != 0 {
-        assert_ne!(0, f.header.e_shnum); /* TODO: valid, not supported yet */
-        assert!(f.header.e_shnum < elfrust::SHN_LORESERVE); /* extra? conformity check */
-
-        for h in f.get_section_headers()? {
+fn print_sections(f: &ElfFile) {
+    let sh = &f.section_headers;
+    if ! sh.is_empty () {
+        for h in sh {
             println!("{}", f.fmt_section_header(&h));
         }
-    } else {
-        assert_eq!(0, f.header.e_shnum); /* extra conformity check */
     }
-
-    Ok(())
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -44,15 +33,15 @@ fn main() -> Result<(), Box<dyn Error>> {
         "ident" => println!("{}", f.ident),
         "header" => println!("{}", f.header),
 
-        "segments" => print_segments(&f)?,
+        "segments" => print_segments(&f),
 
-        "sections" => print_sections(&f)?,
+        "sections" => print_sections(&f),
 
         "all" => {
             println!("{}", f.ident);
             println!("{}", f.header);
-            print_segments(&f)?;
-            print_sections(&f)?
+            print_segments(&f);
+            print_sections(&f)
         }
 
         _ => panic!("unknown command"),
