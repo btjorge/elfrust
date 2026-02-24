@@ -536,9 +536,7 @@ impl ElfFile {
         ElfHeader::parse(&buf).map_err(|s| Box::new(StringError(s)) as Box<dyn Error>)
     }
 
-    pub fn open<P: AsRef<Path>>(p: P) -> Result<ElfFile, Box<dyn Error>> {
-        let file = File::open(p)?;
-
+    pub fn from_file(file: File) -> Result<ElfFile, Box<dyn Error>> {
         let header = Self::read_elf_header(&file)?;
         let program_headers = Self::read_program_headers(header, &file)?;
         let section_headers = Self::read_section_headers(header, &file)?;
@@ -552,6 +550,10 @@ impl ElfFile {
             section_names,
             file
         })
+    }
+
+    pub fn open<P: AsRef<Path>>(p: P) -> Result<ElfFile, Box<dyn Error>> {
+        Self::from_file(File::open(p)?)
     }
 
     fn read_program_headers(header: ElfHeader, file: &File) -> Result<Vec<ElfProgHeader>, io::Error> {

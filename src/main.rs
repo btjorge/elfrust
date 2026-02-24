@@ -1,4 +1,4 @@
-use std::env;
+use std::{env, fs::File};
 use std::error::Error;
 use elfrust::{self, ElfFile};
 
@@ -27,17 +27,24 @@ fn main() -> Result<(), Box<dyn Error>> {
         panic!("bad number of arguments");
     }
 
-    let f = ElfFile::open(&args[2])?;
+    let f = File::open(&args[2])?;
 
     match args[1].as_str() {
-        "ident" => println!("{}", f.header().e_ident),
-        "header" => println!("{}", f.header()),
+        "ident" => println!("{}", ElfFile::read_elf_header(&f)?.e_ident),
+        "header" => println!("{}", ElfFile::read_elf_header(&f)?),
 
-        "segments" => print_segments(&f),
+        "segments" => {
+            let f = ElfFile::from_file(f)?;
+            print_segments(&f)
+        },
 
-        "sections" => print_sections(&f),
+        "sections" => {
+            let f = ElfFile::from_file(f)?;
+            print_sections(&f)
+        },
 
         "all" => {
+            let f = ElfFile::from_file(f)?;
             println!("{}", f.header().e_ident);
             println!("{}", f.header());
             print_segments(&f);
