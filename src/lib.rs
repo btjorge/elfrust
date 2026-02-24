@@ -500,12 +500,11 @@ impl OffLen<u8> for [u8] {
 }
 
 pub struct ElfFile {
-    pub ident: EIdent,
-    pub header: ElfHeader,
-    pub program_headers: Vec<ElfProgHeader>,
-    pub section_headers: Vec<ElfSectionHeader>,
-    pub section_names: Option<Vec<u8>>,
-    pub file: File,
+    header: ElfHeader,
+    program_headers: Vec<ElfProgHeader>,
+    section_headers: Vec<ElfSectionHeader>,
+    section_names: Option<Vec<u8>>,
+    file: File,
 }
 
 use std::io;
@@ -547,7 +546,6 @@ impl ElfFile {
         let section_names = Self::read_section_name_table(header, &section_headers[..], &file)?;
 
         Ok(ElfFile {
-            ident: header.e_ident,
             header,
             program_headers,
             section_headers,
@@ -661,6 +659,18 @@ impl ElfFile {
         }
 
         A { file: self, header: h }
+    }
+
+    pub fn header (&self) -> &ElfHeader {
+        &self.header
+    }
+
+    pub fn program_headers(&self) -> &[ElfProgHeader] {
+        self.program_headers.as_slice()
+    }
+
+    pub fn section_headers(&self) -> &[ElfSectionHeader] {
+        self.section_headers.as_slice()
     }
 }
 
