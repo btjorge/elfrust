@@ -478,26 +478,8 @@ impl ElfSectionHeader {
     }
 }
 
-pub trait OffLen<T> {
-    fn offset(&self, off: impl Into<u64>) -> &[T];
-    fn offlen(&self, off: impl Into<u64>, len: impl Into<u64>) -> &[T];
-}
-
-impl OffLen<u8> for [u8] {
-    fn offset(&self, off: impl Into<u64>) -> &[u8] {
-        let off = usize::try_from(off.into()).unwrap();
-        &self[off..]
-    }
-
-    fn offlen(&self, off: impl Into<u64>, len: impl Into<u64>) -> &[u8] {
-        let len = usize::try_from(len.into()).unwrap();
-        let off = usize::try_from(off.into()).unwrap();
-
-        assert!(off <= usize::MAX - len);
-
-        &self[off..(off+len)]
-    }
-}
+const_assert_eq!(64, usize::BITS);
+const_assert_eq!(64, isize::BITS);
 
 pub struct ElfFile {
     header: ElfHeader,
@@ -610,8 +592,9 @@ impl ElfFile {
     }
 
     pub fn get_section_name(&self, idx: Word) -> &CStr {
+        let idx : usize = idx.try_into().unwrap();
         let table = self.section_names.as_ref().unwrap();
-        CStr::from_bytes_until_nul(table.offset(idx)).expect("invalid string section")
+        CStr::from_bytes_until_nul(&table[idx..]).expect("invalid string section")
     }
 
     pub fn fmt_prog_header(&self, h: &ElfProgHeader) -> impl Display {
