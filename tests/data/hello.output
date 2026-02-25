@@ -21,470 +21,52 @@ Program Header Number: 14
 Section Header Entry Size: 64
 Section Header Number: 31
 Section Header String Index: 30
-type:   PHDR
-flags:  {R}
-offset: 64
-vaddr:  64
-paddr:  64
-filesz: 784
-memsz:  784
-align:  8
-
-type:   INTERP ("/lib64/ld-linux-x86-64.so.2")
-flags:  {R}
-offset: 916
-vaddr:  916
-paddr:  916
-filesz: 28
-memsz:  28
-align:  1
-
-type:   LOAD
-flags:  {R}
-offset: 0
-vaddr:  0
-paddr:  0
-filesz: 1576
-memsz:  1576
-align:  4096
-
-type:   LOAD
-flags:  {X | R}
-offset: 4096
-vaddr:  4096
-paddr:  4096
-filesz: 349
-memsz:  349
-align:  4096
-
-type:   LOAD
-flags:  {R}
-offset: 8192
-vaddr:  8192
-paddr:  8192
-filesz: 268
-memsz:  268
-align:  4096
-
-type:   LOAD
-flags:  {W | R}
-offset: 11728
-vaddr:  15824
-paddr:  15824
-filesz: 584
-memsz:  592
-align:  4096
-
-type:   DYNAMIC
-flags:  {W | R}
-offset: 11744
-vaddr:  15840
-paddr:  15840
-filesz: 480
-memsz:  480
-align:  8
-
-type:   NOTE
-flags:  {R}
-offset: 848
-vaddr:  848
-paddr:  848
-filesz: 32
-memsz:  32
-align:  8
-
-type:   NOTE
-flags:  {R}
-offset: 880
-vaddr:  880
-paddr:  880
-filesz: 36
-memsz:  36
-align:  4
-
-type:   NOTE
-flags:  {R}
-offset: 8428
-vaddr:  8428
-paddr:  8428
-filesz: 32
-memsz:  32
-align:  4
-
-type:   OS(1685382483)
-flags:  {R}
-offset: 848
-vaddr:  848
-paddr:  848
-filesz: 32
-memsz:  32
-align:  8
-
-type:   OS(1685382480)
-flags:  {R}
-offset: 8212
-vaddr:  8212
-paddr:  8212
-filesz: 44
-memsz:  44
-align:  4
-
-type:   OS(1685382481)
-flags:  {W | R}
-offset: 0
-vaddr:  0
-paddr:  0
-filesz: 0
-memsz:  0
-align:  16
-
-type:   OS(1685382482)
-flags:  {R}
-offset: 11728
-vaddr:  15824
-paddr:  15824
-filesz: 560
-memsz:  560
-align:  1
-
-name: 0 ""
-type: NULL
-flags: {}
-addr: 0
-offset: 0
-size: 0
-link: 0
-info: 0
-addralign: 0
-entsize: 0
-
-name: 27 ".note.gnu.property"
-type: NOTE
-flags: {ALLOC}
-addr: 848
-offset: 848
-size: 32
-link: 0
-info: 0
-addralign: 8
-entsize: 0
-
-name: 46 ".note.gnu.build-id"
-type: NOTE
-flags: {ALLOC}
-addr: 880
-offset: 880
-size: 36
-link: 0
-info: 0
-addralign: 4
-entsize: 0
-
-name: 65 ".interp"
-type: PROGBITS
-flags: {ALLOC}
-addr: 916
-offset: 916
-size: 28
-link: 0
-info: 0
-addralign: 1
-entsize: 0
-
-name: 73 ".gnu.hash"
-type: OS(1879048182)
-flags: {ALLOC}
-addr: 944
-offset: 944
-size: 36
-link: 5
-info: 0
-addralign: 8
-entsize: 0
-
-name: 83 ".dynsym"
-type: DYNSYM
-flags: {ALLOC}
-addr: 984
-offset: 984
-size: 168
-link: 6
-info: 1
-addralign: 8
-entsize: 24
-
-name: 91 ".dynstr"
-type: STRTAB
-flags: {ALLOC}
-addr: 1152
-offset: 1152
-size: 141
-link: 0
-info: 0
-addralign: 1
-entsize: 0
-
-name: 99 ".gnu.version"
-type: OS(1879048191)
-flags: {ALLOC}
-addr: 1294
-offset: 1294
-size: 14
-link: 5
-info: 0
-addralign: 2
-entsize: 2
-
-name: 112 ".gnu.version_r"
-type: OS(1879048190)
-flags: {ALLOC}
-addr: 1312
-offset: 1312
-size: 48
-link: 6
-info: 1
-addralign: 8
-entsize: 0
-
-name: 127 ".rela.dyn"
-type: RELA
-flags: {ALLOC}
-addr: 1360
-offset: 1360
-size: 192
-link: 5
-info: 0
-addralign: 8
-entsize: 24
-
-name: 137 ".rela.plt"
-type: RELA
-flags: {ALLOC | INFO_LINK}
-addr: 1552
-offset: 1552
-size: 24
-link: 5
-info: 24
-addralign: 8
-entsize: 24
-
-name: 147 ".init"
-type: PROGBITS
-flags: {ALLOC | EXECINSTR}
-addr: 4096
-offset: 4096
-size: 23
-link: 0
-info: 0
-addralign: 4
-entsize: 0
-
-name: 142 ".plt"
-type: PROGBITS
-flags: {ALLOC | EXECINSTR}
-addr: 4128
-offset: 4128
-size: 32
-link: 0
-info: 0
-addralign: 16
-entsize: 16
-
-name: 153 ".plt.got"
-type: PROGBITS
-flags: {ALLOC | EXECINSTR}
-addr: 4160
-offset: 4160
-size: 8
-link: 0
-info: 0
-addralign: 8
-entsize: 8
-
-name: 162 ".text"
-type: PROGBITS
-flags: {ALLOC | EXECINSTR}
-addr: 4176
-offset: 4176
-size: 259
-link: 0
-info: 0
-addralign: 16
-entsize: 0
-
-name: 168 ".fini"
-type: PROGBITS
-flags: {ALLOC | EXECINSTR}
-addr: 4436
-offset: 4436
-size: 9
-link: 0
-info: 0
-addralign: 4
-entsize: 0
-
-name: 174 ".rodata"
-type: PROGBITS
-flags: {ALLOC}
-addr: 8192
-offset: 8192
-size: 17
-link: 0
-info: 0
-addralign: 4
-entsize: 0
-
-name: 182 ".eh_frame_hdr"
-type: PROGBITS
-flags: {ALLOC}
-addr: 8212
-offset: 8212
-size: 44
-link: 0
-info: 0
-addralign: 4
-entsize: 0
-
-name: 196 ".eh_frame"
-type: PROGBITS
-flags: {ALLOC}
-addr: 8256
-offset: 8256
-size: 172
-link: 0
-info: 0
-addralign: 8
-entsize: 0
-
-name: 206 ".note.ABI-tag"
-type: NOTE
-flags: {ALLOC}
-addr: 8428
-offset: 8428
-size: 32
-link: 0
-info: 0
-addralign: 4
-entsize: 0
-
-name: 220 ".init_array"
-type: INIT_ARRAY
-flags: {WRITE | ALLOC}
-addr: 15824
-offset: 11728
-size: 8
-link: 0
-info: 0
-addralign: 8
-entsize: 8
-
-name: 232 ".fini_array"
-type: FINI_ARRAY
-flags: {WRITE | ALLOC}
-addr: 15832
-offset: 11736
-size: 8
-link: 0
-info: 0
-addralign: 8
-entsize: 8
-
-name: 244 ".dynamic"
-type: DYNAMIC
-flags: {WRITE | ALLOC}
-addr: 15840
-offset: 11744
-size: 480
-link: 6
-info: 0
-addralign: 8
-entsize: 16
-
-name: 157 ".got"
-type: PROGBITS
-flags: {WRITE | ALLOC}
-addr: 16320
-offset: 12224
-size: 40
-link: 0
-info: 0
-addralign: 8
-entsize: 8
-
-name: 253 ".got.plt"
-type: PROGBITS
-flags: {WRITE | ALLOC}
-addr: 16360
-offset: 12264
-size: 32
-link: 0
-info: 0
-addralign: 8
-entsize: 8
-
-name: 262 ".data"
-type: PROGBITS
-flags: {WRITE | ALLOC}
-addr: 16392
-offset: 12296
-size: 16
-link: 0
-info: 0
-addralign: 8
-entsize: 0
-
-name: 268 ".bss"
-type: NOBITS
-flags: {WRITE | ALLOC}
-addr: 16408
-offset: 12312
-size: 8
-link: 0
-info: 0
-addralign: 1
-entsize: 0
-
-name: 273 ".comment"
-type: PROGBITS
-flags: {MERGE | STRINGS}
-addr: 0
-offset: 12312
-size: 31
-link: 0
-info: 0
-addralign: 1
-entsize: 1
-
-name: 1 ".symtab"
-type: SYMTAB
-flags: {}
-addr: 0
-offset: 12344
-size: 864
-link: 29
-info: 18
-addralign: 8
-entsize: 24
-
-name: 9 ".strtab"
-type: STRTAB
-flags: {}
-addr: 0
-offset: 13208
-size: 475
-link: 0
-info: 0
-addralign: 1
-entsize: 0
-
-name: 17 ".shstrtab"
-type: STRTAB
-flags: {}
-addr: 0
-offset: 13683
-size: 282
-link: 0
-info: 0
-addralign: 1
-entsize: 0
-
+ type           | flags   | offset | vaddr  | paddr  | filesz | memsz | align 
+----------------+---------+--------+--------+--------+--------+-------+-------
+ PHDR           | {R}     |     64 |   0x40 |   0x40 |    784 |   784 |     8 
+ INTERP         | {R}     |    916 |  0x394 |  0x394 |     28 |    28 |     1 
+ LOAD           | {R}     |      0 |    0x0 |    0x0 |   1576 |  1576 |  4096 
+ LOAD           | {X | R} |   4096 | 0x1000 | 0x1000 |    349 |   349 |  4096 
+ LOAD           | {R}     |   8192 | 0x2000 | 0x2000 |    268 |   268 |  4096 
+ LOAD           | {W | R} |  11728 | 0x3dd0 | 0x3dd0 |    584 |   592 |  4096 
+ DYNAMIC        | {W | R} |  11744 | 0x3de0 | 0x3de0 |    480 |   480 |     8 
+ NOTE           | {R}     |    848 |  0x350 |  0x350 |     32 |    32 |     8 
+ NOTE           | {R}     |    880 |  0x370 |  0x370 |     36 |    36 |     4 
+ NOTE           | {R}     |   8428 | 0x20ec | 0x20ec |     32 |    32 |     4 
+ OS(1685382483) | {R}     |    848 |  0x350 |  0x350 |     32 |    32 |     8 
+ OS(1685382480) | {R}     |   8212 | 0x2014 | 0x2014 |     44 |    44 |     4 
+ OS(1685382481) | {W | R} |      0 |    0x0 |    0x0 |      0 |     0 |    16 
+ OS(1685382482) | {R}     |  11728 | 0x3dd0 | 0x3dd0 |    560 |   560 |     1 
+    | name                 | type           | flags               | addr   | offset | size | link | info | align | entsize 
+----+----------------------+----------------+---------------------+--------+--------+------+------+------+-------+---------
+ 0  | ""                   | NULL           | {}                  |    0x0 |      0 |    0 |    0 |    0 |     0 |       0 
+ 1  | ".note.gnu.property" | NOTE           | {ALLOC}             |  0x350 |    848 |   32 |    0 |    0 |     8 |       0 
+ 2  | ".note.gnu.build-id" | NOTE           | {ALLOC}             |  0x370 |    880 |   36 |    0 |    0 |     4 |       0 
+ 3  | ".interp"            | PROGBITS       | {ALLOC}             |  0x394 |    916 |   28 |    0 |    0 |     1 |       0 
+ 4  | ".gnu.hash"          | OS(1879048182) | {ALLOC}             |  0x3b0 |    944 |   36 |    5 |    0 |     8 |       0 
+ 5  | ".dynsym"            | DYNSYM         | {ALLOC}             |  0x3d8 |    984 |  168 |    6 |    1 |     8 |      24 
+ 6  | ".dynstr"            | STRTAB         | {ALLOC}             |  0x480 |   1152 |  141 |    0 |    0 |     1 |       0 
+ 7  | ".gnu.version"       | OS(1879048191) | {ALLOC}             |  0x50e |   1294 |   14 |    5 |    0 |     2 |       2 
+ 8  | ".gnu.version_r"     | OS(1879048190) | {ALLOC}             |  0x520 |   1312 |   48 |    6 |    1 |     8 |       0 
+ 9  | ".rela.dyn"          | RELA           | {ALLOC}             |  0x550 |   1360 |  192 |    5 |    0 |     8 |      24 
+ 10 | ".rela.plt"          | RELA           | {ALLOC | INFO_LINK} |  0x610 |   1552 |   24 |    5 |   24 |     8 |      24 
+ 11 | ".init"              | PROGBITS       | {ALLOC | EXECINSTR} | 0x1000 |   4096 |   23 |    0 |    0 |     4 |       0 
+ 12 | ".plt"               | PROGBITS       | {ALLOC | EXECINSTR} | 0x1020 |   4128 |   32 |    0 |    0 |    16 |      16 
+ 13 | ".plt.got"           | PROGBITS       | {ALLOC | EXECINSTR} | 0x1040 |   4160 |    8 |    0 |    0 |     8 |       8 
+ 14 | ".text"              | PROGBITS       | {ALLOC | EXECINSTR} | 0x1050 |   4176 |  259 |    0 |    0 |    16 |       0 
+ 15 | ".fini"              | PROGBITS       | {ALLOC | EXECINSTR} | 0x1154 |   4436 |    9 |    0 |    0 |     4 |       0 
+ 16 | ".rodata"            | PROGBITS       | {ALLOC}             | 0x2000 |   8192 |   17 |    0 |    0 |     4 |       0 
+ 17 | ".eh_frame_hdr"      | PROGBITS       | {ALLOC}             | 0x2014 |   8212 |   44 |    0 |    0 |     4 |       0 
+ 18 | ".eh_frame"          | PROGBITS       | {ALLOC}             | 0x2040 |   8256 |  172 |    0 |    0 |     8 |       0 
+ 19 | ".note.ABI-tag"      | NOTE           | {ALLOC}             | 0x20ec |   8428 |   32 |    0 |    0 |     4 |       0 
+ 20 | ".init_array"        | INIT_ARRAY     | {WRITE | ALLOC}     | 0x3dd0 |  11728 |    8 |    0 |    0 |     8 |       8 
+ 21 | ".fini_array"        | FINI_ARRAY     | {WRITE | ALLOC}     | 0x3dd8 |  11736 |    8 |    0 |    0 |     8 |       8 
+ 22 | ".dynamic"           | DYNAMIC        | {WRITE | ALLOC}     | 0x3de0 |  11744 |  480 |    6 |    0 |     8 |      16 
+ 23 | ".got"               | PROGBITS       | {WRITE | ALLOC}     | 0x3fc0 |  12224 |   40 |    0 |    0 |     8 |       8 
+ 24 | ".got.plt"           | PROGBITS       | {WRITE | ALLOC}     | 0x3fe8 |  12264 |   32 |    0 |    0 |     8 |       8 
+ 25 | ".data"              | PROGBITS       | {WRITE | ALLOC}     | 0x4008 |  12296 |   16 |    0 |    0 |     8 |       0 
+ 26 | ".bss"               | NOBITS         | {WRITE | ALLOC}     | 0x4018 |  12312 |    8 |    0 |    0 |     1 |       0 
+ 27 | ".comment"           | PROGBITS       | {MERGE | STRINGS}   |    0x0 |  12312 |   31 |    0 |    0 |     1 |       1 
+ 28 | ".symtab"            | SYMTAB         | {}                  |    0x0 |  12344 |  864 |   29 |   18 |     8 |      24 
+ 29 | ".strtab"            | STRTAB         | {}                  |    0x0 |  13208 |  475 |    0 |    0 |     1 |       0 
+ 30 | ".shstrtab"          | STRTAB         | {}                  |    0x0 |  13683 |  282 |    0 |    0 |     1 |       0 

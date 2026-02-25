@@ -9,6 +9,7 @@ bitflags = { version = "2.11.0", features = ["bytemuck"] }
 bytemuck = { version = "1.25.0", features = ["derive", "extern_crate_alloc"] }
 static_assertions = "1.1.0"
 strum_macros = "0.27.2"
+tabled = "0.20.0"
 
 [dev-dependencies]
 snapbox = "1.2.2"
