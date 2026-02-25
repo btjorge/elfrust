@@ -10,6 +10,7 @@ use tabled::grid::records::Records;
 use tabled::settings::{object::{Object, FirstRow}, Alignment};
 use tabled::{builder::Builder, settings::style::Style, Table};
 use tabled::grid::config::Entity;
+use pager::Pager;
 
 struct Columns<R: RangeBounds<usize>>(R);
 
@@ -77,6 +78,8 @@ fn print_sections(f: &ElfFile) {
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
+    Pager::with_pager("less -SF").setup();
+
     let args: Vec<String> = env::args().collect();
 
     if args.len() != 3 {
