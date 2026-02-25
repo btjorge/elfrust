@@ -2,11 +2,12 @@ use std::fs::File;
 use std::mem::offset_of;
 use std::error::Error;
 use std::os::unix::fs::FileExt;
-use std::fmt::{self, Display, Formatter};
+use std::fmt::{self, Debug, Display, Formatter};
 use strum_macros::{FromRepr, Display};
 use bytemuck::{AnyBitPattern, CheckedBitPattern, Contiguous, NoUninit, Zeroable, cast_slice_mut, pod_read_unaligned};
 use bytemuck::checked::{self, CheckedCastError};
 use bytemuck::allocation::zeroed_vec;
+use tabled::Tabled;
 
 const EI_MAG0       : usize =  0;
 #[allow(unused)]
@@ -292,9 +293,7 @@ impl SegmentType {
     const HIPROC  : Word = 0x7fffffff;
 }
 
-use fmt::Debug;
-
-impl Debug for SegmentType {
+impl Display for SegmentType {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self.0 {
             SegmentType::NULL => write!(f, "NULL"),
@@ -335,9 +334,11 @@ impl Display for SegmentFlags {
     }
 }
 
-#[derive(Copy, Clone, AnyBitPattern, NoUninit)]
+#[derive(Copy, Clone, AnyBitPattern, NoUninit, Tabled)]
+#[tabled(display(Addr, "display_addr"))]
 #[repr(C)]
 pub struct ElfProgHeader {
+    #[tabled(rename = "type")]
     type_:   SegmentType,
     flags:  SegmentFlags,
     offset: Off,
@@ -397,7 +398,7 @@ impl SectionType {
     const HIUSER : Word = 0xffffffff;
 }
 
-impl Debug for SectionType {
+impl Display for SectionType {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self.0 {
             Self::NULL => write!(f, "NULL"),
@@ -455,10 +456,12 @@ impl Display for SectionFlags {
     }
 }
 
-#[derive(Debug, Clone, Copy, AnyBitPattern, NoUninit)]
+#[derive(Clone, Copy, AnyBitPattern, NoUninit, Tabled)]
+#[tabled(display(Addr, "display_addr"))]
 #[repr(C)]
 pub struct ElfSectionHeader {
     pub name:      Word,
+    #[tabled(rename = "type")]
     pub type_:     SectionType,
     pub flags:     SectionFlags,
     pub addr:      Addr,
@@ -476,6 +479,10 @@ impl ElfSectionHeader {
 
         pod_read_unaligned(buf)
     }
+}
+
+fn display_addr(a: &Addr) -> String {
+    format!("{:#x}", a)
 }
 
 const_assert_eq!(64, usize::BITS);
@@ -603,7 +610,7 @@ impl ElfFile {
         impl Display for A<'_, '_> {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 let h = self.header;
-                write!(f, "type:   {:?}", h.type_)?;
+                write!(f, "type:   {}", h.type_)?;
                 if h.type_.0 == SegmentType::INTERP {
                     let mut buf = vec!(0u8; h.filesz.try_into().unwrap());
                     self.file.file.read_exact_at(&mut buf, h.offset).unwrap();
@@ -631,7 +638,7 @@ impl ElfFile {
 
                 writeln!(f, "name: {} {:?}", h.name,
                          self.file.get_section_name(h.name))?;
-                writeln!(f, "type: {:?}", h.type_)?;
+                writeln!(f, "type: {}", h.type_)?;
                 writeln!(f, "flags: {}", h.flags)?;
                 writeln!(f, "addr: {:?}", h.addr)?;
                 writeln!(f, "offset: {:?}", h.offset)?;
