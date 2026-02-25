@@ -91,6 +91,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     match args[1].as_str() {
         "ident" => println!("{}", ElfFile::read_elf_header(&f)?.e_ident),
         "header" => println!("{}", ElfFile::read_elf_header(&f)?),
+        "interp" => println!("{:?}", ElfFile::from_file(f)?.interp()?.unwrap()),
 
         "segments" => {
             let f = ElfFile::from_file(f)?;
@@ -106,6 +107,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             let f = ElfFile::from_file(f)?;
             println!("{}", f.header().e_ident);
             println!("{}", f.header());
+            println!("{:?}", f.interp()?.unwrap());
             print_segments(&f);
             print_sections(&f)
         }
