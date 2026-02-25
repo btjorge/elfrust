@@ -181,28 +181,28 @@ const_assert!(size_of::<ElfSectionHeader>() % align_of::<ElfSectionHeader>() == 
 pub struct ElfType(Half);
 
 impl ElfType {
-    const ET_NONE : Half = 0;
-    const ET_REL  : Half = 1;
-    const ET_EXEC : Half = 2;
-    const ET_DYN  : Half = 3;
-    const ET_CORE : Half = 4;
+    const NONE : Half = 0;
+    const REL  : Half = 1;
+    const EXEC : Half = 2;
+    const DYN  : Half = 3;
+    const CORE : Half = 4;
 
-    const ET_LOOS   : Half = 0xfe00;
-    const ET_HIOS   : Half = 0xfeff;
-    const ET_LOPROC : Half = 0xff00;
-    const ET_HIPROC : Half = 0xffff;
+    const LOOS   : Half = 0xfe00;
+    const HIOS   : Half = 0xfeff;
+    const LOPROC : Half = 0xff00;
+    const HIPROC : Half = 0xffff;
 }
 
 impl Debug for ElfType {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self.0 {
-            Self::ET_NONE => write!(f, "ET_NONE"),
-            Self::ET_REL => write!(f, "ET_REL"),
-            Self::ET_EXEC => write!(f, "ET_EXEC"),
-            Self::ET_DYN => write!(f, "ET_DYN"),
-            Self::ET_CORE => write!(f, "ET_CORE"),
-            Self::ET_LOOS..=Self::ET_HIOS => write!(f, "ET_OS({})", self.0),
-            Self::ET_LOPROC..=Self::ET_HIPROC => write!(f, "ET_PROC({})", self.0),
+            Self::NONE => write!(f, "NONE"),
+            Self::REL => write!(f, "REL"),
+            Self::EXEC => write!(f, "EXEC"),
+            Self::DYN => write!(f, "DYN"),
+            Self::CORE => write!(f, "CORE"),
+            Self::LOOS..=Self::HIOS => write!(f, "OS({})", self.0),
+            Self::LOPROC..=Self::HIPROC => write!(f, "PROC({})", self.0),
             _ => panic!("unsupported: {}", self.0),
         }
     }
@@ -277,19 +277,19 @@ impl Display for ElfHeader {
 struct SegmentType(Word);
 
 impl SegmentType {
-    const PT_NULL    : Word = 0;
-    const PT_LOAD    : Word = 1;
-    const PT_DYNAMIC : Word = 2;
-    const PT_INTERP  : Word = 3;
-    const PT_NOTE    : Word = 4;
-    const PT_SHLIB   : Word = 5;
-    const PT_PHDR    : Word = 6;
-    const PT_TLS     : Word = 7;
+    const NULL    : Word = 0;
+    const LOAD    : Word = 1;
+    const DYNAMIC : Word = 2;
+    const INTERP  : Word = 3;
+    const NOTE    : Word = 4;
+    const SHLIB   : Word = 5;
+    const PHDR    : Word = 6;
+    const TLS     : Word = 7;
 
-    const PT_LOOS    : Word = 0x60000000;
-    const PT_HIOS    : Word = 0x6fffffff;
-    const PT_LOPROC  : Word = 0x70000000;
-    const PT_HIPROC  : Word = 0x7fffffff;
+    const LOOS    : Word = 0x60000000;
+    const HIOS    : Word = 0x6fffffff;
+    const LOPROC  : Word = 0x70000000;
+    const HIPROC  : Word = 0x7fffffff;
 }
 
 use fmt::Debug;
@@ -297,16 +297,16 @@ use fmt::Debug;
 impl Debug for SegmentType {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self.0 {
-            SegmentType::PT_NULL => write!(f, "PT_NULL"),
-            SegmentType::PT_LOAD => write!(f, "PT_LOAD"),
-            SegmentType::PT_DYNAMIC => write!(f, "PT_DYNAMIC"),
-            SegmentType::PT_INTERP => write!(f, "PT_INTERP"),
-            SegmentType::PT_NOTE => write!(f, "PT_NOTE"),
-            SegmentType::PT_SHLIB => write!(f, "PT_SHLIB"),
-            SegmentType::PT_PHDR => write!(f, "PT_PHDR"),
-            SegmentType::PT_TLS => write!(f, "PT_TLS"),
-            Self::PT_LOOS..=Self::PT_HIOS => write!(f, "PT_OS({})", self.0),
-            Self::PT_LOPROC..=Self::PT_HIPROC => write!(f, "PT_PROC({})", self.0),
+            SegmentType::NULL => write!(f, "NULL"),
+            SegmentType::LOAD => write!(f, "LOAD"),
+            SegmentType::DYNAMIC => write!(f, "DYNAMIC"),
+            SegmentType::INTERP => write!(f, "INTERP"),
+            SegmentType::NOTE => write!(f, "NOTE"),
+            SegmentType::SHLIB => write!(f, "SHLIB"),
+            SegmentType::PHDR => write!(f, "PHDR"),
+            SegmentType::TLS => write!(f, "TLS"),
+            Self::LOOS..=Self::HIOS => write!(f, "OS({})", self.0),
+            Self::LOPROC..=Self::HIPROC => write!(f, "PROC({})", self.0),
             _ => panic!("unsupported: {}", self.0),
         }
     }
@@ -318,9 +318,9 @@ bitflags! {
     #[repr(transparent)]
     #[derive(Clone, Copy, AnyBitPattern, NoUninit)]
     struct SegmentFlags: Word {
-        const PF_X = 0x1;
-        const PF_W = 0x2;
-        const PF_R = 0x4;
+        const X = 0x1;
+        const W = 0x2;
+        const R = 0x4;
     }
 }
 
@@ -338,14 +338,14 @@ impl Display for SegmentFlags {
 #[derive(Copy, Clone, AnyBitPattern, NoUninit)]
 #[repr(C)]
 pub struct ElfProgHeader {
-    p_type:   SegmentType,
-    p_flags:  SegmentFlags,
-    p_offset: Off,
-    p_vaddr:  Addr,
-    p_paddr:  Addr,
-    p_filesz: Xword,
-    p_memsz:  Xword,
-    p_align:  Xword,
+    type_:   SegmentType,
+    flags:  SegmentFlags,
+    offset: Off,
+    vaddr:  Addr,
+    paddr:  Addr,
+    filesz: Xword,
+    memsz:  Xword,
+    align:  Xword,
 }
 
 impl ElfProgHeader {
@@ -355,9 +355,9 @@ impl ElfProgHeader {
 
     #[expect(dead_code)] // TODO
     fn check(&self) -> Result<(), &str> {
-        if self.p_align >= 2 &&
-            (!self.p_align.is_power_of_two()
-             || self.p_offset % self.p_align == self.p_vaddr % self.p_align) {
+        if self.align >= 2 &&
+            (!self.align.is_power_of_two()
+             || self.offset % self.align == self.vaddr % self.align) {
             Err("invalid alignement")
         } else {
             Ok(())
@@ -370,57 +370,57 @@ impl ElfProgHeader {
 pub struct SectionType(Word);
 
 impl SectionType {
-    const SHT_NULL          : Word = 0;
-    const SHT_PROGBITS      : Word = 1;
-    const SHT_SYMTAB        : Word = 2;
-    const SHT_STRTAB        : Word = 3;
-    const SHT_RELA          : Word = 4;
-    const SHT_HASH          : Word = 5;
-    const SHT_DYNAMIC       : Word = 6;
-    const SHT_NOTE          : Word = 7;
-    const SHT_NOBITS        : Word = 8;
-    const SHT_REL           : Word = 9;
-    const SHT_SHLIB         : Word = 10;
-    const SHT_DYNSYM        : Word = 11;
-    const SHT_INIT_ARRAY    : Word = 14;
-    const SHT_FINI_ARRAY    : Word = 15;
-    const SHT_PREINIT_ARRAY : Word = 16;
-    const SHT_GROUP         : Word = 17;
-    const SHT_SYMTAB_SHNDX  : Word = 18;
-    const SHT_RELR          : Word = 19;
+    const NULL          : Word = 0;
+    const PROGBITS      : Word = 1;
+    const SYMTAB        : Word = 2;
+    const STRTAB        : Word = 3;
+    const RELA          : Word = 4;
+    const HASH          : Word = 5;
+    const DYNAMIC       : Word = 6;
+    const NOTE          : Word = 7;
+    const NOBITS        : Word = 8;
+    const REL           : Word = 9;
+    const SHLIB         : Word = 10;
+    const DYNSYM        : Word = 11;
+    const INIT_ARRAY    : Word = 14;
+    const FINI_ARRAY    : Word = 15;
+    const PREINIT_ARRAY : Word = 16;
+    const GROUP         : Word = 17;
+    const SYMTAB_SHNDX  : Word = 18;
+    const RELR          : Word = 19;
 
-    const SHT_LOOS   : Word = 0x60000000;
-    const SHT_HIOS   : Word = 0x6fffffff;
-    const SHT_LOPROC : Word = 0x70000000;
-    const SHT_HIPROC : Word = 0x7fffffff;
-    const SHT_LOUSER : Word = 0x80000000;
-    const SHT_HIUSER : Word = 0xffffffff;
+    const LOOS   : Word = 0x60000000;
+    const HIOS   : Word = 0x6fffffff;
+    const LOPROC : Word = 0x70000000;
+    const HIPROC : Word = 0x7fffffff;
+    const LOUSER : Word = 0x80000000;
+    const HIUSER : Word = 0xffffffff;
 }
 
 impl Debug for SectionType {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self.0 {
-            Self::SHT_NULL => write!(f, "SHT_NULL"),
-            Self::SHT_PROGBITS => write!(f, "SHT_PROGBITS"),
-            Self::SHT_SYMTAB => write!(f, "SHT_SYMTAB"),
-            Self::SHT_STRTAB => write!(f, "SHT_STRTAB"),
-            Self::SHT_RELA => write!(f, "SHT_RELA"),
-            Self::SHT_HASH => write!(f, "SHT_HASH"),
-            Self::SHT_DYNAMIC => write!(f, "SHT_DYNAMIC"),
-            Self::SHT_NOTE => write!(f, "SHT_NOTE"),
-            Self::SHT_NOBITS => write!(f, "SHT_NOBITS"),
-            Self::SHT_REL => write!(f, "SHT_REL"),
-            Self::SHT_SHLIB => write!(f, "SHT_SHLIB"),
-            Self::SHT_DYNSYM => write!(f, "SHT_DYNSYM"),
-            Self::SHT_INIT_ARRAY => write!(f, "SHT_INIT_ARRAY"),
-            Self::SHT_FINI_ARRAY => write!(f, "SHT_FINI_ARRAY"),
-            Self::SHT_PREINIT_ARRAY => write!(f, "SHT_PREINIT_ARRAY"),
-            Self::SHT_GROUP => write!(f, "SHT_GROUP"),
-            Self::SHT_SYMTAB_SHNDX => write!(f, "SHT_SYMTAB_SHNDX"),
-            Self::SHT_RELR => write!(f, "SHT_RELR"),
-            Self::SHT_LOOS..=Self::SHT_HIOS => write!(f, "SHT_OS({})", self.0),
-            Self::SHT_LOPROC..=Self::SHT_HIPROC => write!(f, "SHT_PROC({})", self.0),
-            Self::SHT_LOUSER..=Self::SHT_HIUSER => write!(f, "SHT_USER({})", self.0),
+            Self::NULL => write!(f, "NULL"),
+            Self::PROGBITS => write!(f, "PROGBITS"),
+            Self::SYMTAB => write!(f, "SYMTAB"),
+            Self::STRTAB => write!(f, "STRTAB"),
+            Self::RELA => write!(f, "RELA"),
+            Self::HASH => write!(f, "HASH"),
+            Self::DYNAMIC => write!(f, "DYNAMIC"),
+            Self::NOTE => write!(f, "NOTE"),
+            Self::NOBITS => write!(f, "NOBITS"),
+            Self::REL => write!(f, "REL"),
+            Self::SHLIB => write!(f, "SHLIB"),
+            Self::DYNSYM => write!(f, "DYNSYM"),
+            Self::INIT_ARRAY => write!(f, "INIT_ARRAY"),
+            Self::FINI_ARRAY => write!(f, "FINI_ARRAY"),
+            Self::PREINIT_ARRAY => write!(f, "PREINIT_ARRAY"),
+            Self::GROUP => write!(f, "GROUP"),
+            Self::SYMTAB_SHNDX => write!(f, "SYMTAB_SHNDX"),
+            Self::RELR => write!(f, "RELR"),
+            Self::LOOS..=Self::HIOS => write!(f, "OS({})", self.0),
+            Self::LOPROC..=Self::HIPROC => write!(f, "PROC({})", self.0),
+            Self::LOUSER..=Self::HIUSER => write!(f, "USER({})", self.0),
             _ => panic!("unsupported: {}", self.0),
         }
     }
@@ -430,17 +430,17 @@ bitflags! {
     #[derive(Debug, PartialEq, Clone, Copy, AnyBitPattern, NoUninit)]
     #[repr(transparent)]
     pub struct SectionFlags: Xword {
-        const SHF_WRITE            = 0x1;
-        const SHF_ALLOC            = 0x2;
-        const SHF_EXECINSTR        = 0x4;
-        const SHF_MERGE            = 0x10;
-        const SHF_STRINGS          = 0x20;
-        const SHF_INFO_LINK        = 0x40;
-        const SHF_LINK_ORDER       = 0x80;
-        const SHF_OS_NONCONFORMING = 0x100;
-        const SHF_GROUP            = 0x200;
-        const SHF_TLS              = 0x400;
-        const SHF_COMPRESSED       = 0x800;
+        const WRITE            = 0x1;
+        const ALLOC            = 0x2;
+        const EXECINSTR        = 0x4;
+        const MERGE            = 0x10;
+        const STRINGS          = 0x20;
+        const INFO_LINK        = 0x40;
+        const LINK_ORDER       = 0x80;
+        const OS_NONCONFORMING = 0x100;
+        const GROUP            = 0x200;
+        const TLS              = 0x400;
+        const COMPRESSED       = 0x800;
     }
 }
 
@@ -458,16 +458,16 @@ impl Display for SectionFlags {
 #[derive(Debug, Clone, Copy, AnyBitPattern, NoUninit)]
 #[repr(C)]
 pub struct ElfSectionHeader {
-    pub sh_name:      Word,
-    pub sh_type:      SectionType,
-    pub sh_flags:     SectionFlags,
-    pub sh_addr:      Addr,
-    pub sh_offset:    Off,
-    pub sh_size:      Xword,
-    pub sh_link:      Word,
-    pub sh_info:      Word,
-    pub sh_addralign: Xword,
-    pub sh_entsize:   Xword,
+    pub name:      Word,
+    pub type_:     SectionType,
+    pub flags:     SectionFlags,
+    pub addr:      Addr,
+    pub offset:    Off,
+    pub size:      Xword,
+    pub link:      Word,
+    pub info:      Word,
+    pub align:     Xword,
+    pub entsize:   Xword,
 }
 
 impl ElfSectionHeader {
@@ -579,15 +579,15 @@ impl ElfFile {
         assert_ne!(idx, SHN_UNDEF);
         assert!(idx < SHN_LORESERVE);
         let hsection = sections[usize::from(idx)];
-        assert_eq!(SectionType::SHT_STRTAB, hsection.sh_type.0); /* STRTAB */
-        assert_eq!(SectionFlags::empty(), hsection.sh_flags); /* none */
-        //assert_eq!(0, hsection.sh_addr); /* not in memory */
-        assert!(hsection.sh_addralign <= 1);
-        assert_eq!(0, hsection.sh_entsize); /* not fixed size entries (?) */
-        assert!(hsection.sh_size <= SIZE);
+        assert_eq!(SectionType::STRTAB, hsection.type_.0); /* STRTAB */
+        assert_eq!(SectionFlags::empty(), hsection.flags); /* none */
+        //assert_eq!(0, hsection.addr); /* not in memory */
+        assert!(hsection.align <= 1);
+        assert_eq!(0, hsection.entsize); /* not fixed size entries (?) */
+        assert!(hsection.size <= SIZE);
 
-        let mut buf = vec!(0u8; hsection.sh_size.try_into().unwrap());
-        file.read_exact_at(&mut buf, hsection.sh_offset)?;
+        let mut buf = vec!(0u8; hsection.size.try_into().unwrap());
+        file.read_exact_at(&mut buf, hsection.offset)?;
         Ok(Some(buf))
     }
 
@@ -603,19 +603,19 @@ impl ElfFile {
         impl Display for A<'_, '_> {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 let h = self.header;
-                write!(f, "type:   {:?}", h.p_type)?;
-                if h.p_type.0 == SegmentType::PT_INTERP {
-                    let mut buf = vec!(0u8; h.p_filesz.try_into().unwrap());
-                    self.file.file.read_exact_at(&mut buf, h.p_offset).unwrap();
+                write!(f, "type:   {:?}", h.type_)?;
+                if h.type_.0 == SegmentType::INTERP {
+                    let mut buf = vec!(0u8; h.filesz.try_into().unwrap());
+                    self.file.file.read_exact_at(&mut buf, h.offset).unwrap();
                     write!(f, " ({:?})", CStr::from_bytes_with_nul(&buf).expect("invalid interp section"))?;
                 };
-                writeln!(f, "\nflags:  {}", h.p_flags)?;
-                writeln!(f, "offset: {:?}", h.p_offset)?;
-                writeln!(f, "vaddr:  {:?}", h.p_vaddr)?;
-                writeln!(f, "paddr:  {:?}", h.p_paddr)?;
-                writeln!(f, "filesz: {:?}", h.p_filesz)?;
-                writeln!(f, "memsz:  {:?}", h.p_memsz)?;
-                writeln!(f, "align:  {:?}", h.p_align)
+                writeln!(f, "\nflags:  {}", h.flags)?;
+                writeln!(f, "offset: {:?}", h.offset)?;
+                writeln!(f, "vaddr:  {:?}", h.vaddr)?;
+                writeln!(f, "paddr:  {:?}", h.paddr)?;
+                writeln!(f, "filesz: {:?}", h.filesz)?;
+                writeln!(f, "memsz:  {:?}", h.memsz)?;
+                writeln!(f, "align:  {:?}", h.align)
             }
         }
 
@@ -629,17 +629,17 @@ impl ElfFile {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 let h = self.header;
 
-                writeln!(f, "name: {} {:?}", h.sh_name,
-                         self.file.get_section_name(h.sh_name))?;
-                writeln!(f, "type: {:?}", h.sh_type)?;
-                writeln!(f, "flags: {}", h.sh_flags)?;
-                writeln!(f, "addr: {:?}", h.sh_addr)?;
-                writeln!(f, "offset: {:?}", h.sh_offset)?;
-                writeln!(f, "size: {:?}", h.sh_size)?;
-                writeln!(f, "link: {:?}", h.sh_link)?;
-                writeln!(f, "info: {:?}", h.sh_info)?;
-                writeln!(f, "addralign: {:?}", h.sh_addralign)?;
-                writeln!(f, "entsize: {:?}", h.sh_entsize)
+                writeln!(f, "name: {} {:?}", h.name,
+                         self.file.get_section_name(h.name))?;
+                writeln!(f, "type: {:?}", h.type_)?;
+                writeln!(f, "flags: {}", h.flags)?;
+                writeln!(f, "addr: {:?}", h.addr)?;
+                writeln!(f, "offset: {:?}", h.offset)?;
+                writeln!(f, "size: {:?}", h.size)?;
+                writeln!(f, "link: {:?}", h.link)?;
+                writeln!(f, "info: {:?}", h.info)?;
+                writeln!(f, "addralign: {:?}", h.align)?;
+                writeln!(f, "entsize: {:?}", h.entsize)
             }
         }
 

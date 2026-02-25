@@ -8,7 +8,7 @@ Data Encoding: 2's complement, least significant byte first
 Elf Version: EV_CURRENT
 OS ABI: 0
 ABI Version: 0
-Type: ET_DYN
+Type: DYN
 Machine: 62
 Elf Version: 1
 Entry: 0x1050
@@ -21,8 +21,8 @@ Program Header Number: 14
 Section Header Entry Size: 64
 Section Header Number: 31
 Section Header String Index: 30
-type:   PT_PHDR
-flags:  {PF_R}
+type:   PHDR
+flags:  {R}
 offset: 64
 vaddr:  64
 paddr:  64
@@ -30,8 +30,8 @@ filesz: 784
 memsz:  784
 align:  8
 
-type:   PT_INTERP ("/lib64/ld-linux-x86-64.so.2")
-flags:  {PF_R}
+type:   INTERP ("/lib64/ld-linux-x86-64.so.2")
+flags:  {R}
 offset: 916
 vaddr:  916
 paddr:  916
@@ -39,8 +39,8 @@ filesz: 28
 memsz:  28
 align:  1
 
-type:   PT_LOAD
-flags:  {PF_R}
+type:   LOAD
+flags:  {R}
 offset: 0
 vaddr:  0
 paddr:  0
@@ -48,8 +48,8 @@ filesz: 1576
 memsz:  1576
 align:  4096
 
-type:   PT_LOAD
-flags:  {PF_X | PF_R}
+type:   LOAD
+flags:  {X | R}
 offset: 4096
 vaddr:  4096
 paddr:  4096
@@ -57,8 +57,8 @@ filesz: 349
 memsz:  349
 align:  4096
 
-type:   PT_LOAD
-flags:  {PF_R}
+type:   LOAD
+flags:  {R}
 offset: 8192
 vaddr:  8192
 paddr:  8192
@@ -66,8 +66,8 @@ filesz: 268
 memsz:  268
 align:  4096
 
-type:   PT_LOAD
-flags:  {PF_W | PF_R}
+type:   LOAD
+flags:  {W | R}
 offset: 11728
 vaddr:  15824
 paddr:  15824
@@ -75,8 +75,8 @@ filesz: 584
 memsz:  592
 align:  4096
 
-type:   PT_DYNAMIC
-flags:  {PF_W | PF_R}
+type:   DYNAMIC
+flags:  {W | R}
 offset: 11744
 vaddr:  15840
 paddr:  15840
@@ -84,8 +84,8 @@ filesz: 480
 memsz:  480
 align:  8
 
-type:   PT_NOTE
-flags:  {PF_R}
+type:   NOTE
+flags:  {R}
 offset: 848
 vaddr:  848
 paddr:  848
@@ -93,8 +93,8 @@ filesz: 32
 memsz:  32
 align:  8
 
-type:   PT_NOTE
-flags:  {PF_R}
+type:   NOTE
+flags:  {R}
 offset: 880
 vaddr:  880
 paddr:  880
@@ -102,8 +102,8 @@ filesz: 36
 memsz:  36
 align:  4
 
-type:   PT_NOTE
-flags:  {PF_R}
+type:   NOTE
+flags:  {R}
 offset: 8428
 vaddr:  8428
 paddr:  8428
@@ -111,8 +111,8 @@ filesz: 32
 memsz:  32
 align:  4
 
-type:   PT_OS(1685382483)
-flags:  {PF_R}
+type:   OS(1685382483)
+flags:  {R}
 offset: 848
 vaddr:  848
 paddr:  848
@@ -120,8 +120,8 @@ filesz: 32
 memsz:  32
 align:  8
 
-type:   PT_OS(1685382480)
-flags:  {PF_R}
+type:   OS(1685382480)
+flags:  {R}
 offset: 8212
 vaddr:  8212
 paddr:  8212
@@ -129,8 +129,8 @@ filesz: 44
 memsz:  44
 align:  4
 
-type:   PT_OS(1685382481)
-flags:  {PF_W | PF_R}
+type:   OS(1685382481)
+flags:  {W | R}
 offset: 0
 vaddr:  0
 paddr:  0
@@ -138,8 +138,8 @@ filesz: 0
 memsz:  0
 align:  16
 
-type:   PT_OS(1685382482)
-flags:  {PF_R}
+type:   OS(1685382482)
+flags:  {R}
 offset: 11728
 vaddr:  15824
 paddr:  15824
@@ -148,7 +148,7 @@ memsz:  560
 align:  1
 
 name: 0 ""
-type: SHT_NULL
+type: NULL
 flags: {}
 addr: 0
 offset: 0
@@ -159,8 +159,8 @@ addralign: 0
 entsize: 0
 
 name: 27 ".note.gnu.property"
-type: SHT_NOTE
-flags: {SHF_ALLOC}
+type: NOTE
+flags: {ALLOC}
 addr: 848
 offset: 848
 size: 32
@@ -170,8 +170,8 @@ addralign: 8
 entsize: 0
 
 name: 46 ".note.gnu.build-id"
-type: SHT_NOTE
-flags: {SHF_ALLOC}
+type: NOTE
+flags: {ALLOC}
 addr: 880
 offset: 880
 size: 36
@@ -181,8 +181,8 @@ addralign: 4
 entsize: 0
 
 name: 65 ".interp"
-type: SHT_PROGBITS
-flags: {SHF_ALLOC}
+type: PROGBITS
+flags: {ALLOC}
 addr: 916
 offset: 916
 size: 28
@@ -192,8 +192,8 @@ addralign: 1
 entsize: 0
 
 name: 73 ".gnu.hash"
-type: SHT_OS(1879048182)
-flags: {SHF_ALLOC}
+type: OS(1879048182)
+flags: {ALLOC}
 addr: 944
 offset: 944
 size: 36
@@ -203,8 +203,8 @@ addralign: 8
 entsize: 0
 
 name: 83 ".dynsym"
-type: SHT_DYNSYM
-flags: {SHF_ALLOC}
+type: DYNSYM
+flags: {ALLOC}
 addr: 984
 offset: 984
 size: 168
@@ -214,8 +214,8 @@ addralign: 8
 entsize: 24
 
 name: 91 ".dynstr"
-type: SHT_STRTAB
-flags: {SHF_ALLOC}
+type: STRTAB
+flags: {ALLOC}
 addr: 1152
 offset: 1152
 size: 141
@@ -225,8 +225,8 @@ addralign: 1
 entsize: 0
 
 name: 99 ".gnu.version"
-type: SHT_OS(1879048191)
-flags: {SHF_ALLOC}
+type: OS(1879048191)
+flags: {ALLOC}
 addr: 1294
 offset: 1294
 size: 14
@@ -236,8 +236,8 @@ addralign: 2
 entsize: 2
 
 name: 112 ".gnu.version_r"
-type: SHT_OS(1879048190)
-flags: {SHF_ALLOC}
+type: OS(1879048190)
+flags: {ALLOC}
 addr: 1312
 offset: 1312
 size: 48
@@ -247,8 +247,8 @@ addralign: 8
 entsize: 0
 
 name: 127 ".rela.dyn"
-type: SHT_RELA
-flags: {SHF_ALLOC}
+type: RELA
+flags: {ALLOC}
 addr: 1360
 offset: 1360
 size: 192
@@ -258,8 +258,8 @@ addralign: 8
 entsize: 24
 
 name: 137 ".rela.plt"
-type: SHT_RELA
-flags: {SHF_ALLOC | SHF_INFO_LINK}
+type: RELA
+flags: {ALLOC | INFO_LINK}
 addr: 1552
 offset: 1552
 size: 24
@@ -269,8 +269,8 @@ addralign: 8
 entsize: 24
 
 name: 147 ".init"
-type: SHT_PROGBITS
-flags: {SHF_ALLOC | SHF_EXECINSTR}
+type: PROGBITS
+flags: {ALLOC | EXECINSTR}
 addr: 4096
 offset: 4096
 size: 23
@@ -280,8 +280,8 @@ addralign: 4
 entsize: 0
 
 name: 142 ".plt"
-type: SHT_PROGBITS
-flags: {SHF_ALLOC | SHF_EXECINSTR}
+type: PROGBITS
+flags: {ALLOC | EXECINSTR}
 addr: 4128
 offset: 4128
 size: 32
@@ -291,8 +291,8 @@ addralign: 16
 entsize: 16
 
 name: 153 ".plt.got"
-type: SHT_PROGBITS
-flags: {SHF_ALLOC | SHF_EXECINSTR}
+type: PROGBITS
+flags: {ALLOC | EXECINSTR}
 addr: 4160
 offset: 4160
 size: 8
@@ -302,8 +302,8 @@ addralign: 8
 entsize: 8
 
 name: 162 ".text"
-type: SHT_PROGBITS
-flags: {SHF_ALLOC | SHF_EXECINSTR}
+type: PROGBITS
+flags: {ALLOC | EXECINSTR}
 addr: 4176
 offset: 4176
 size: 259
@@ -313,8 +313,8 @@ addralign: 16
 entsize: 0
 
 name: 168 ".fini"
-type: SHT_PROGBITS
-flags: {SHF_ALLOC | SHF_EXECINSTR}
+type: PROGBITS
+flags: {ALLOC | EXECINSTR}
 addr: 4436
 offset: 4436
 size: 9
@@ -324,8 +324,8 @@ addralign: 4
 entsize: 0
 
 name: 174 ".rodata"
-type: SHT_PROGBITS
-flags: {SHF_ALLOC}
+type: PROGBITS
+flags: {ALLOC}
 addr: 8192
 offset: 8192
 size: 17
@@ -335,8 +335,8 @@ addralign: 4
 entsize: 0
 
 name: 182 ".eh_frame_hdr"
-type: SHT_PROGBITS
-flags: {SHF_ALLOC}
+type: PROGBITS
+flags: {ALLOC}
 addr: 8212
 offset: 8212
 size: 44
@@ -346,8 +346,8 @@ addralign: 4
 entsize: 0
 
 name: 196 ".eh_frame"
-type: SHT_PROGBITS
-flags: {SHF_ALLOC}
+type: PROGBITS
+flags: {ALLOC}
 addr: 8256
 offset: 8256
 size: 172
@@ -357,8 +357,8 @@ addralign: 8
 entsize: 0
 
 name: 206 ".note.ABI-tag"
-type: SHT_NOTE
-flags: {SHF_ALLOC}
+type: NOTE
+flags: {ALLOC}
 addr: 8428
 offset: 8428
 size: 32
@@ -368,8 +368,8 @@ addralign: 4
 entsize: 0
 
 name: 220 ".init_array"
-type: SHT_INIT_ARRAY
-flags: {SHF_WRITE | SHF_ALLOC}
+type: INIT_ARRAY
+flags: {WRITE | ALLOC}
 addr: 15824
 offset: 11728
 size: 8
@@ -379,8 +379,8 @@ addralign: 8
 entsize: 8
 
 name: 232 ".fini_array"
-type: SHT_FINI_ARRAY
-flags: {SHF_WRITE | SHF_ALLOC}
+type: FINI_ARRAY
+flags: {WRITE | ALLOC}
 addr: 15832
 offset: 11736
 size: 8
@@ -390,8 +390,8 @@ addralign: 8
 entsize: 8
 
 name: 244 ".dynamic"
-type: SHT_DYNAMIC
-flags: {SHF_WRITE | SHF_ALLOC}
+type: DYNAMIC
+flags: {WRITE | ALLOC}
 addr: 15840
 offset: 11744
 size: 480
@@ -401,8 +401,8 @@ addralign: 8
 entsize: 16
 
 name: 157 ".got"
-type: SHT_PROGBITS
-flags: {SHF_WRITE | SHF_ALLOC}
+type: PROGBITS
+flags: {WRITE | ALLOC}
 addr: 16320
 offset: 12224
 size: 40
@@ -412,8 +412,8 @@ addralign: 8
 entsize: 8
 
 name: 253 ".got.plt"
-type: SHT_PROGBITS
-flags: {SHF_WRITE | SHF_ALLOC}
+type: PROGBITS
+flags: {WRITE | ALLOC}
 addr: 16360
 offset: 12264
 size: 32
@@ -423,8 +423,8 @@ addralign: 8
 entsize: 8
 
 name: 262 ".data"
-type: SHT_PROGBITS
-flags: {SHF_WRITE | SHF_ALLOC}
+type: PROGBITS
+flags: {WRITE | ALLOC}
 addr: 16392
 offset: 12296
 size: 16
@@ -434,8 +434,8 @@ addralign: 8
 entsize: 0
 
 name: 268 ".bss"
-type: SHT_NOBITS
-flags: {SHF_WRITE | SHF_ALLOC}
+type: NOBITS
+flags: {WRITE | ALLOC}
 addr: 16408
 offset: 12312
 size: 8
@@ -445,8 +445,8 @@ addralign: 1
 entsize: 0
 
 name: 273 ".comment"
-type: SHT_PROGBITS
-flags: {SHF_MERGE | SHF_STRINGS}
+type: PROGBITS
+flags: {MERGE | STRINGS}
 addr: 0
 offset: 12312
 size: 31
@@ -456,7 +456,7 @@ addralign: 1
 entsize: 1
 
 name: 1 ".symtab"
-type: SHT_SYMTAB
+type: SYMTAB
 flags: {}
 addr: 0
 offset: 12344
@@ -467,7 +467,7 @@ addralign: 8
 entsize: 24
 
 name: 9 ".strtab"
-type: SHT_STRTAB
+type: STRTAB
 flags: {}
 addr: 0
 offset: 13208
@@ -478,7 +478,7 @@ addralign: 1
 entsize: 0
 
 name: 17 ".shstrtab"
-type: SHT_STRTAB
+type: STRTAB
 flags: {}
 addr: 0
 offset: 13683
