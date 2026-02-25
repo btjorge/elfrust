@@ -498,7 +498,7 @@ pub struct ElfFile {
 
 use std::io;
 use std::path::Path;
-use std::ffi::c_str::CStr;
+use std::ffi::c_str::{CStr, CString};
 
 const SHN_UNDEF : u16 = 0;
 pub const SHN_LORESERVE : u16 = 0xff00;
@@ -663,6 +663,17 @@ impl ElfFile {
 
     pub fn section_headers(&self) -> &[ElfSectionHeader] {
         self.section_headers.as_slice()
+    }
+
+    pub fn interp(&self) -> io::Result<Option<CString>> {
+        match self.program_headers.iter().find(|h| h.type_.0 == SegmentType::INTERP) {
+            None => Ok(None),
+            Some(header) => {
+                let mut buf = vec!(0u8; header.filesz.try_into().unwrap());
+                self.file.read_exact_at(&mut buf, header.offset)?;
+                Ok(Some(CStr::from_bytes_with_nul(&buf).expect("invalid interp section").to_owned()))
+            }
+        }
     }
 }
 
