@@ -427,6 +427,12 @@ impl Display for SectionType {
     }
 }
 
+impl Debug for SectionType {
+    fn fmt (&self, f: &mut Formatter<'_>) -> fmt::Result {
+        Display::fmt(self, f)
+    }
+}
+
 bitflags! {
     #[derive(Debug, PartialEq, Clone, Copy, AnyBitPattern, NoUninit)]
     #[repr(transparent)]
@@ -456,7 +462,7 @@ impl Display for SectionFlags {
     }
 }
 
-#[derive(Clone, Copy, AnyBitPattern, NoUninit, Tabled)]
+#[derive(Debug, Clone, Copy, AnyBitPattern, NoUninit, Tabled)]
 #[tabled(display(Addr, "display_addr"))]
 #[repr(C)]
 pub struct ElfSectionHeader {
@@ -487,6 +493,53 @@ fn display_addr(a: &Addr) -> String {
 
 const_assert_eq!(64, usize::BITS);
 const_assert_eq!(64, isize::BITS);
+
+pub struct StringTableSectionIterator<'a> {
+    buf: &'a [u8],
+    index: usize,
+}
+
+impl<'a> Iterator for StringTableSectionIterator<'a> {
+    type Item = (Word, &'a CStr);
+
+    fn next(&mut self) -> Option<(Word, &'a CStr)> {
+        if self.index >= self.buf.len() {
+            return None
+        };
+
+        let index = self.index;
+        let s = CStr::from_bytes_until_nul(&self.buf[index..]).unwrap();
+        self.index += s.count_bytes() + 1;
+        Some((index.try_into().unwrap(), s))
+    }
+}
+
+#[derive(Debug)]
+pub struct StringTableSection {
+    pub name : Word,
+    content : Vec<u8>,
+}
+
+impl StringTableSection {
+    fn new(name: Word, buf: Vec<u8>) -> Self {
+        assert!(buf[0] == 0u8);
+        assert!(buf[buf.len()-1] == 0u8);
+
+        StringTableSection { name, content: buf }
+    }
+}
+
+impl<'a> IntoIterator for &'a StringTableSection {
+    type Item = (Word, &'a CStr);
+    type IntoIter = StringTableSectionIterator<'a>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        StringTableSectionIterator {
+            buf: self.content.as_slice(),
+            index: 0,
+        }
+    }
+}
 
 pub struct ElfFile {
     header: ElfHeader,
@@ -674,6 +727,21 @@ impl ElfFile {
                 Ok(Some(CStr::from_bytes_with_nul(&buf).expect("invalid interp section").to_owned()))
             }
         }
+    }
+
+    pub fn string_table_sections(&self) -> impl Iterator<Item = StringTableSection> {
+        self.section_headers.iter()
+            .filter_map(|h| {
+                if h.type_.0 != SectionType::STRTAB {
+                    return None
+                }
+
+                assert!(h.size <= SIZE);
+
+                let mut buf = vec![0u8; h.size.try_into().unwrap()];
+                self.file.read_exact_at(&mut buf[..], h.offset).unwrap();
+                Some(StringTableSection::new(h.name, buf))
+            })
     }
 }
 

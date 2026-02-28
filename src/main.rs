@@ -77,6 +77,16 @@ fn print_sections(f: &ElfFile) {
     }
 }
 
+fn print_strings(f: &ElfFile) {
+    for st in f.string_table_sections() {
+        println!("{:?}:", f.get_section_name(st.name));
+
+        for (i, s) in &st {
+            println!("{:6}: {:?}", i, s);
+        }
+    }
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
     Pager::with_pager("less -SF").setup();
 
@@ -103,13 +113,16 @@ fn main() -> Result<(), Box<dyn Error>> {
             print_sections(&f)
         },
 
+        "strings" => print_strings(&ElfFile::from_file(f)?),
+
         "all" => {
             let f = ElfFile::from_file(f)?;
             println!("{}", f.header().e_ident);
             println!("{}", f.header());
             println!("{:?}", f.interp()?.unwrap());
             print_segments(&f);
-            print_sections(&f)
+            print_sections(&f);
+            print_strings(&f)
         }
 
         _ => panic!("unknown command"),
