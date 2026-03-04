@@ -5,7 +5,7 @@ use std::ops::{Bound, IntoBounds, RangeBounds};
 use std::path::PathBuf;
 use std::fs::File;
 use std::error::Error;
-use elfrust::{self, ElfFile, ElfProgHeader, ElfSectionHeader};
+use elfrust::{self, ElfFile, ElfProgHeader, ElfSectionHeader, SymTableSection};
 use clap::{Parser, Args};
 use tabled::Tabled;
 use tabled::grid::records::Records;
@@ -37,7 +37,7 @@ where
     }
 }
 
-fn fields<'a>(e: &ElfFile, h: &'a ElfSectionHeader) -> Vec<Cow<'a, str>>{
+fn section_header_table_fields<'a>(e: &ElfFile, h: &'a ElfSectionHeader) -> Vec<Cow<'a, str>>{
     let mut v = h.fields();
     let name = v.first_mut().unwrap();
     *name = Cow::from(format!("{:?}", e.get_section_name(h.name)));
@@ -46,7 +46,7 @@ fn fields<'a>(e: &ElfFile, h: &'a ElfSectionHeader) -> Vec<Cow<'a, str>>{
 
 fn print_section_header_table(e: &ElfFile, sh: &[ElfSectionHeader]) -> String {
     let tabled : Vec<Vec<String>> =
-        sh.iter().map(|h| fields(e, h).into_iter().map(|f| String::from(f)).collect()).collect();
+        sh.iter().map(|h| section_header_table_fields(e, h).into_iter().map(|f| String::from(f)).collect()).collect();
 
     let mut builder = Builder::from(tabled);
     builder.insert_record(0, ElfSectionHeader::headers());
@@ -90,6 +90,22 @@ fn print_strings(f: &ElfFile) {
     }
 }
 
+fn print_symbol_table(t: &SymTableSection) -> String {
+    Table::new(t)
+        .with(Style::psql())
+        .modify(Columns(4..), Alignment::right())
+        .modify(FirstRow, Alignment::left())
+        .to_string()
+}
+
+fn print_symbols(e: &ElfFile) {
+    for (h, t) in e.symtab_sections().chain(e.dynsym_sections()) {
+        println!("{:?}:", e.get_section_name(h.name));
+
+        println!("{}", print_symbol_table(&t));
+    }
+}
+
 #[derive(Parser)]
 #[command(version, about)]
 struct Cli {
@@ -125,6 +141,10 @@ struct What {
     #[arg(long)]
     strings: bool,
 
+    /// Print the symbols tables
+    #[arg(long)]
+    symbols: bool,
+
     /// Print everything
     #[arg(long)]
     all: bool,
@@ -144,6 +164,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         print_segments(&f);
         print_sections(&f);
         print_strings(&f);
+        print_symbols(&f);
         return Ok(())
     }
 
@@ -169,6 +190,10 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     if cli.what.strings {
         print_strings(&f)
+    }
+
+    if cli.what.symbols {
+        print_symbols(&f)
     }
 
     Ok(())

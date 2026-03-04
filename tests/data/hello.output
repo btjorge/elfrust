@@ -144,3 +144,52 @@ Section Header String Index: 30
    262: ".data"
    268: ".bss"
    273: ".comment"
+".symtab":
+ name                                     | bind   | type_  | vis     | shndx | value | size 
+------------------------------------------+--------+--------+---------+-------+-------+------
+                                          | LOCAL  | NOTYPE | DEFAULT |     0 |     0 |    0 
+ "Scrt1.o"                                | LOCAL  | FILE   | DEFAULT | 65521 |     0 |    0 
+ "__abi_tag"                              | LOCAL  | OBJECT | DEFAULT |    19 |  8428 |   32 
+ "crtstuff.c"                             | LOCAL  | FILE   | DEFAULT | 65521 |     0 |    0 
+ "deregister_tm_clones"                   | LOCAL  | FUNC   | DEFAULT |    14 |  4224 |    0 
+ "register_tm_clones"                     | LOCAL  | FUNC   | DEFAULT |    14 |  4272 |    0 
+ "__do_global_dtors_aux"                  | LOCAL  | FUNC   | DEFAULT |    14 |  4336 |    0 
+ "completed.0"                            | LOCAL  | OBJECT | DEFAULT |    26 | 16408 |    1 
+ "__do_global_dtors_aux_fini_array_entry" | LOCAL  | OBJECT | DEFAULT |    21 | 15832 |    0 
+ "frame_dummy"                            | LOCAL  | FUNC   | DEFAULT |    14 |  4400 |    0 
+ "__frame_dummy_init_array_entry"         | LOCAL  | OBJECT | DEFAULT |    20 | 15824 |    0 
+ "hello.c"                                | LOCAL  | FILE   | DEFAULT | 65521 |     0 |    0 
+ "crtstuff.c"                             | LOCAL  | FILE   | DEFAULT | 65521 |     0 |    0 
+ "__FRAME_END__"                          | LOCAL  | OBJECT | DEFAULT |    18 |  8424 |    0 
+                                          | LOCAL  | FILE   | DEFAULT | 65521 |     0 |    0 
+ "_DYNAMIC"                               | LOCAL  | OBJECT | DEFAULT |    22 | 15840 |    0 
+ "__GNU_EH_FRAME_HDR"                     | LOCAL  | NOTYPE | DEFAULT |    17 |  8212 |    0 
+ "_GLOBAL_OFFSET_TABLE_"                  | LOCAL  | OBJECT | DEFAULT |    24 | 16360 |    0 
+ "__libc_start_main@GLIBC_2.34"           | GLOBAL | FUNC   | DEFAULT |     0 |     0 |    0 
+ "_ITM_deregisterTMCloneTable"            | WEAK   | NOTYPE | DEFAULT |     0 |     0 |    0 
+ "data_start"                             | WEAK   | NOTYPE | DEFAULT |    25 | 16392 |    0 
+ "puts@GLIBC_2.2.5"                       | GLOBAL | FUNC   | DEFAULT |     0 |     0 |    0 
+ "_edata"                                 | GLOBAL | NOTYPE | DEFAULT |    25 | 16408 |    0 
+ "_fini"                                  | GLOBAL | FUNC   | HIDDEN  |    15 |  4436 |    0 
+ "__data_start"                           | GLOBAL | NOTYPE | DEFAULT |    25 | 16392 |    0 
+ "__gmon_start__"                         | WEAK   | NOTYPE | DEFAULT |     0 |     0 |    0 
+ "__dso_handle"                           | GLOBAL | OBJECT | HIDDEN  |    25 | 16400 |    0 
+ "_IO_stdin_used"                         | GLOBAL | OBJECT | DEFAULT |    16 |  8192 |    4 
+ "_end"                                   | GLOBAL | NOTYPE | DEFAULT |    26 | 16416 |    0 
+ "_start"                                 | GLOBAL | FUNC   | DEFAULT |    14 |  4176 |   34 
+ "__bss_start"                            | GLOBAL | NOTYPE | DEFAULT |    26 | 16408 |    0 
+ "main"                                   | GLOBAL | FUNC   | DEFAULT |    14 |  4409 |   26 
+ "__TMC_END__"                            | GLOBAL | OBJECT | HIDDEN  |    25 | 16408 |    0 
+ "_ITM_registerTMCloneTable"              | WEAK   | NOTYPE | DEFAULT |     0 |     0 |    0 
+ "__cxa_finalize@GLIBC_2.2.5"             | WEAK   | FUNC   | DEFAULT |     0 |     0 |    0 
+ "_init"                                  | GLOBAL | FUNC   | HIDDEN  |    11 |  4096 |    0 
+".dynsym":
+ name                          | bind   | type_  | vis     | shndx | value | size 
+-------------------------------+--------+--------+---------+-------+-------+------
+                               | LOCAL  | NOTYPE | DEFAULT |     0 |     0 |    0 
+ "__libc_start_main"           | GLOBAL | FUNC   | DEFAULT |     0 |     0 |    0 
+ "_ITM_deregisterTMCloneTable" | WEAK   | NOTYPE | DEFAULT |     0 |     0 |    0 
+ "puts"                        | GLOBAL | FUNC   | DEFAULT |     0 |     0 |    0 
+ "__gmon_start__"              | WEAK   | NOTYPE | DEFAULT |     0 |     0 |    0 
+ "_ITM_registerTMCloneTable"   | WEAK   | NOTYPE | DEFAULT |     0 |     0 |    0 
+ "__cxa_finalize"              | WEAK   | FUNC   | DEFAULT |     0 |     0 |    0 

@@ -1,6 +1,9 @@
 #![feature(macro_metavar_expr_concat)]
 
+use std::slice;
 use std::fs::File;
+use std::ops::Index;
+use std::ffi::{CStr, CString};
 use std::mem::offset_of;
 use std::error::Error;
 use std::os::unix::fs::FileExt;
@@ -227,7 +230,7 @@ impl ElfHeader {
                 assert_eq!(ret.e_version, ret.e_ident.ei_version.into_integer().into());
 
                 assert_eq!(usize::from(ret.e_ehsize), size_of::<ElfHeader>());
-                assert_eq!(usize::from(ret.e_phentsize), size_of::<ElfProgHeader>());
+                //assert_eq!(usize::from(ret.e_phentsize), size_of::<ElfProgHeader>()); // might be zero when no program headers (.o files)
                 assert_eq!(usize::from(ret.e_shentsize), size_of::<ElfSectionHeader>());
 
                 Ok(ret)
@@ -447,10 +450,19 @@ pub struct StringTableSection {
 
 impl StringTableSection {
     fn new(name: Word, buf: Vec<u8>) -> Self {
+        //assert!(buf.len() <= SIZE.try_into().unwrap());
         assert!(buf[0] == 0u8);
         assert!(buf[buf.len()-1] == 0u8);
 
         StringTableSection { name, content: buf }
+    }
+}
+
+impl Index<Word> for StringTableSection {
+    type Output = CStr;
+
+    fn index(&self, i: Word) -> &Self::Output {
+        CStr::from_bytes_until_nul(&self.content[i.try_into().unwrap()..]).unwrap()
     }
 }
 
@@ -466,6 +478,119 @@ impl<'a> IntoIterator for &'a StringTableSection {
     }
 }
 
+#[derive(Clone, Copy, AnyBitPattern, NoUninit)]
+#[repr(C)]
+pub struct Sym {
+    name: Word,
+    info: u8,
+    other: u8,
+    shndx: Half,
+    value: Addr,
+    size: Xword,
+}
+
+const_assert_eq!(24, size_of::<Sym>());
+const_assert_eq!(8, align_of::<Sym>());
+
+ranged_enum!{
+    struct SymBind: u8 {
+        const LOCAL  = 0;
+        const GLOBAL = 1;
+        const WEAK   = 2;
+        range OS     = 10..=12;
+        range PROC   = 13..=15;
+    }
+}
+
+ranged_enum!{
+    struct SymType: u8 {
+        const NOTYPE  = 0;
+        const OBJECT  = 1;
+        const FUNC    = 2;
+        const SECTION = 3;
+        const FILE    = 4;
+        const COMMON  = 5;
+        const TLS     = 6;
+
+        range OS   = 10..=12;
+        range PROC = 13..=15;
+    }
+}
+
+ranged_enum!{
+    struct SymVis: u8 {
+        const DEFAULT   = 0;
+        const INTERNAL  = 1;
+        const HIDDEN    = 2;
+        const PROTECTED = 3;
+        const EXPORTED  = 4;
+        const SINGLETON = 5;
+        const ELIMINATE = 6;
+    }
+}
+
+fn sym_name(s: Sym, names: &StringTableSection) -> Option<&CStr> {
+    if s.name == 0 {
+        None
+    } else {
+        Some(&names[s.name])
+    }
+}
+
+fn display_symbol_name(name: &Option<CString>) -> String {
+    match *name {
+        None => "".to_string(),
+        Some(ref s) => format!("{:?}", s),
+    }
+}
+
+#[derive(Tabled)]
+pub struct SymView {
+    #[tabled(display("display_symbol_name"))]
+    name:  Option<CString>,
+    bind:  SymBind,
+    type_: SymType,
+    vis:   SymVis,
+    shndx: Half,
+    value: Addr,
+    size:  Xword,
+}
+
+fn view_sym(s: Sym, names: &StringTableSection) -> SymView {
+    SymView {
+        name: sym_name(s, names).map(|s| s.to_owned()),
+        bind: SymBind(s.info >> 4u8),
+        type_: SymType(s.info & 0xfu8),
+        vis: SymVis(s.other & 0x7u8),
+        shndx: s.shndx,
+        value: s.value,
+        size: s.size,
+    }
+}
+
+pub struct SymTableSection {
+    pub name: Word,
+    symbols: Vec<SymView>,
+}
+
+impl SymTableSection {
+    fn new(name: Word, symbols: Vec<Sym>, names: StringTableSection) -> Self {
+        SymTableSection {
+            name,
+            symbols: symbols.iter().map(|s| view_sym(*s, &names)).collect(),
+        }
+    }
+}
+
+impl<'a> IntoIterator for &'a SymTableSection {
+    type Item = &'a SymView;
+    type IntoIter = slice::Iter<'a, SymView>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.symbols.iter()
+    }
+}
+
 pub struct ElfFile {
     header: ElfHeader,
     program_headers: Vec<ElfProgHeader>,
@@ -476,7 +601,6 @@ pub struct ElfFile {
 
 use std::io;
 use std::path::Path;
-use std::ffi::c_str::{CStr, CString};
 
 const SHN_UNDEF : u16 = 0;
 pub const SHN_LORESERVE : u16 = 0xff00;
@@ -643,6 +767,14 @@ impl ElfFile {
         }
     }
 
+    fn read_string_table_section (&self, h: &ElfSectionHeader) -> io::Result<StringTableSection> {
+        //assert!(h.size <= SIZE);
+
+        let mut buf = vec![0u8; h.size.try_into().unwrap()];
+        self.file.read_exact_at(&mut buf[..], h.offset)?;
+        Ok(StringTableSection::new(h.name, buf))
+    }
+
     pub fn string_table_sections(&self) -> impl Iterator<Item = StringTableSection> {
         self.section_headers.iter()
             .filter_map(|h| {
@@ -650,11 +782,48 @@ impl ElfFile {
                     return None
                 }
 
-                assert!(h.size <= SIZE);
+                Some(self.read_string_table_section(h).unwrap())
+            })
+    }
 
-                let mut buf = vec![0u8; h.size.try_into().unwrap()];
-                self.file.read_exact_at(&mut buf[..], h.offset).unwrap();
-                Some(StringTableSection::new(h.name, buf))
+    fn read_symbol_table (&self, h: &ElfSectionHeader) -> io::Result<(ElfSectionHeader, SymTableSection)> {
+        //assert!(h.size <= SIZE);
+        assert_eq!(size_of::<Sym>(), h.entsize.try_into().unwrap());
+
+        let mut symbols : Vec<Sym> = zeroed_vec(usize::try_from(h.size / h.entsize).unwrap());
+
+        self.file.read_exact_at(cast_slice_mut(symbols.as_mut_slice()), h.offset)?;
+
+        assert!(h.link != 0);
+
+        let strtab = self.section_headers[usize::try_from(h.link).unwrap()];
+
+        assert!(strtab.type_ == SectionType::STRTAB);
+
+        let names = self.read_string_table_section(&strtab)?;
+
+        Ok((*h, SymTableSection::new(h.name, symbols, names)))
+    }
+
+    pub fn symtab_sections(&self) -> impl Iterator<Item = (ElfSectionHeader, SymTableSection)> {
+        self.section_headers.iter()
+            .filter_map(|h| {
+                if h.type_ != SectionType::SYMTAB {
+                    return None
+                }
+
+                Some(self.read_symbol_table(h).unwrap())
+            })
+    }
+
+    pub fn dynsym_sections(&self) -> impl Iterator<Item = (ElfSectionHeader, SymTableSection)> {
+        self.section_headers.iter()
+            .filter_map(|h| {
+                if h.type_ != SectionType::DYNSYM {
+                    return None
+                }
+
+                Some(self.read_symbol_table(h).unwrap())
             })
     }
 }
