@@ -1,3 +1,6 @@
+[workspace]
+members = [ "ranged_enums"]
+
 [package]
 name = "elfrust"
 version = "0.1.0"
@@ -6,6 +9,7 @@ description = "Toy ELF file inspector in Rust"
 license = "MIT OR Apache-2.0"
 
 [dependencies]
+ranged_enums = { path = "./ranged_enums" }
 bitflags = { version = "2.13.2", features = ["bytemuck"] }
 bytemuck = { version = "1.25.2", features = ["derive", "extern_crate_alloc"] }
 clap = { version = "4.6.9", features = ["derive"] }

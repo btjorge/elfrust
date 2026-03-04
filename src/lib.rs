@@ -1,8 +1,11 @@
+#![feature(macro_metavar_expr_concat)]
+
 use std::fs::File;
 use std::mem::offset_of;
 use std::error::Error;
 use std::os::unix::fs::FileExt;
-use std::fmt::{self, Debug, Display, Formatter};
+use std::fmt::{self, Debug, Display};
+use ranged_enums::ranged_enum;
 use strum_macros::{FromRepr, Display};
 use bytemuck::{AnyBitPattern, CheckedBitPattern, Contiguous, NoUninit, Zeroable, cast_slice_mut, pod_read_unaligned};
 use bytemuck::checked::{self, CheckedCastError};
@@ -177,35 +180,16 @@ type Sxword = i64;
 const_assert!(size_of::<ElfProgHeader>() % align_of::<ElfProgHeader>() == 0);
 const_assert!(size_of::<ElfSectionHeader>() % align_of::<ElfSectionHeader>() == 0);
 
-#[derive(Clone, Copy, AnyBitPattern)]
-#[repr(transparent)]
-pub struct ElfType(Half);
+ranged_enum!{
+    pub struct ElfType: Half {
+        const NONE = 0;
+        const REL  = 1;
+        const EXEC = 2;
+        const DYN  = 3;
+        const CORE = 4;
 
-impl ElfType {
-    const NONE : Half = 0;
-    const REL  : Half = 1;
-    const EXEC : Half = 2;
-    const DYN  : Half = 3;
-    const CORE : Half = 4;
-
-    const LOOS   : Half = 0xfe00;
-    const HIOS   : Half = 0xfeff;
-    const LOPROC : Half = 0xff00;
-    const HIPROC : Half = 0xffff;
-}
-
-impl Debug for ElfType {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self.0 {
-            Self::NONE => write!(f, "NONE"),
-            Self::REL => write!(f, "REL"),
-            Self::EXEC => write!(f, "EXEC"),
-            Self::DYN => write!(f, "DYN"),
-            Self::CORE => write!(f, "CORE"),
-            Self::LOOS..=Self::HIOS => write!(f, "OS({})", self.0),
-            Self::LOPROC..=Self::HIPROC => write!(f, "PROC({})", self.0),
-            _ => panic!("unsupported: {}", self.0),
-        }
+        range OS   = 0xfe00..=0xfeff;
+        range PROC = 0xff00..=0xffff;
     }
 }
 
@@ -273,43 +257,24 @@ impl Display for ElfHeader {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, AnyBitPattern, NoUninit)]
-#[repr(transparent)]
-struct SegmentType(Word);
+ranged_enum!{
+    struct SegmentType: Word {
+        const NULL    = 0;
+        const LOAD    = 1;
+        const DYNAMIC = 2;
+        const INTERP  = 3;
+        const NOTE    = 4;
+        const SHLIB   = 5;
+        const PHDR    = 6;
+        const TLS     = 7;
 
-impl SegmentType {
-    const NULL    : Word = 0;
-    const LOAD    : Word = 1;
-    const DYNAMIC : Word = 2;
-    const INTERP  : Word = 3;
-    const NOTE    : Word = 4;
-    const SHLIB   : Word = 5;
-    const PHDR    : Word = 6;
-    const TLS     : Word = 7;
-
-    const LOOS    : Word = 0x60000000;
-    const HIOS    : Word = 0x6fffffff;
-    const LOPROC  : Word = 0x70000000;
-    const HIPROC  : Word = 0x7fffffff;
-}
-
-impl Display for SegmentType {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self.0 {
-            SegmentType::NULL => write!(f, "NULL"),
-            SegmentType::LOAD => write!(f, "LOAD"),
-            SegmentType::DYNAMIC => write!(f, "DYNAMIC"),
-            SegmentType::INTERP => write!(f, "INTERP"),
-            SegmentType::NOTE => write!(f, "NOTE"),
-            SegmentType::SHLIB => write!(f, "SHLIB"),
-            SegmentType::PHDR => write!(f, "PHDR"),
-            SegmentType::TLS => write!(f, "TLS"),
-            Self::LOOS..=Self::HIOS => write!(f, "OS({})", self.0),
-            Self::LOPROC..=Self::HIPROC => write!(f, "PROC({})", self.0),
-            _ => panic!("unsupported: {}", self.0),
-        }
+        range OS      = 0x60000000..=0x6fffffff;
+        range PROC    = 0x70000000..=0x7fffffff;
     }
 }
+
+const_assert_eq!(size_of::<Word>(), size_of::<SegmentType>());
+const_assert_eq!(align_of::<Word>(), align_of::<SegmentType>());
 
 use bitflags::{bitflags, parser};
 
@@ -366,70 +331,30 @@ impl ElfProgHeader {
     }
 }
 
-#[derive(Clone, Copy, AnyBitPattern, NoUninit)]
-#[repr(transparent)]
-pub struct SectionType(Word);
+ranged_enum!{
+    pub struct SectionType: Word {
+        const NULL          = 0;
+        const PROGBITS      = 1;
+        const SYMTAB        = 2;
+        const STRTAB        = 3;
+        const RELA          = 4;
+        const HASH          = 5;
+        const DYNAMIC       = 6;
+        const NOTE          = 7;
+        const NOBITS        = 8;
+        const REL           = 9;
+        const SHLIB         = 10;
+        const DYNSYM        = 11;
+        const INIT_ARRAY    = 14;
+        const FINI_ARRAY    = 15;
+        const PREINIT_ARRAY = 16;
+        const GROUP         = 17;
+        const SYMTAB_SHNDX  = 18;
+        const RELR          = 19;
 
-impl SectionType {
-    const NULL          : Word = 0;
-    const PROGBITS      : Word = 1;
-    const SYMTAB        : Word = 2;
-    const STRTAB        : Word = 3;
-    const RELA          : Word = 4;
-    const HASH          : Word = 5;
-    const DYNAMIC       : Word = 6;
-    const NOTE          : Word = 7;
-    const NOBITS        : Word = 8;
-    const REL           : Word = 9;
-    const SHLIB         : Word = 10;
-    const DYNSYM        : Word = 11;
-    const INIT_ARRAY    : Word = 14;
-    const FINI_ARRAY    : Word = 15;
-    const PREINIT_ARRAY : Word = 16;
-    const GROUP         : Word = 17;
-    const SYMTAB_SHNDX  : Word = 18;
-    const RELR          : Word = 19;
-
-    const LOOS   : Word = 0x60000000;
-    const HIOS   : Word = 0x6fffffff;
-    const LOPROC : Word = 0x70000000;
-    const HIPROC : Word = 0x7fffffff;
-    const LOUSER : Word = 0x80000000;
-    const HIUSER : Word = 0xffffffff;
-}
-
-impl Display for SectionType {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self.0 {
-            Self::NULL => write!(f, "NULL"),
-            Self::PROGBITS => write!(f, "PROGBITS"),
-            Self::SYMTAB => write!(f, "SYMTAB"),
-            Self::STRTAB => write!(f, "STRTAB"),
-            Self::RELA => write!(f, "RELA"),
-            Self::HASH => write!(f, "HASH"),
-            Self::DYNAMIC => write!(f, "DYNAMIC"),
-            Self::NOTE => write!(f, "NOTE"),
-            Self::NOBITS => write!(f, "NOBITS"),
-            Self::REL => write!(f, "REL"),
-            Self::SHLIB => write!(f, "SHLIB"),
-            Self::DYNSYM => write!(f, "DYNSYM"),
-            Self::INIT_ARRAY => write!(f, "INIT_ARRAY"),
-            Self::FINI_ARRAY => write!(f, "FINI_ARRAY"),
-            Self::PREINIT_ARRAY => write!(f, "PREINIT_ARRAY"),
-            Self::GROUP => write!(f, "GROUP"),
-            Self::SYMTAB_SHNDX => write!(f, "SYMTAB_SHNDX"),
-            Self::RELR => write!(f, "RELR"),
-            Self::LOOS..=Self::HIOS => write!(f, "OS({})", self.0),
-            Self::LOPROC..=Self::HIPROC => write!(f, "PROC({})", self.0),
-            Self::LOUSER..=Self::HIUSER => write!(f, "USER({})", self.0),
-            _ => panic!("unsupported: {}", self.0),
-        }
-    }
-}
-
-impl Debug for SectionType {
-    fn fmt (&self, f: &mut Formatter<'_>) -> fmt::Result {
-        Display::fmt(self, f)
+        range OS   = 0x60000000..=0x6fffffff;
+        range PROC = 0x70000000..=0x7fffffff;
+        range USER = 0x80000000..=0xffffffff;
     }
 }
 
@@ -628,7 +553,7 @@ impl ElfFile {
         assert_ne!(idx, SHN_UNDEF);
         assert!(idx < SHN_LORESERVE);
         let hsection = sections[usize::from(idx)];
-        assert_eq!(SectionType::STRTAB, hsection.type_.0); /* STRTAB */
+        assert_eq!(SectionType::STRTAB, hsection.type_); /* STRTAB */
         assert_eq!(SectionFlags::empty(), hsection.flags); /* none */
         //assert_eq!(0, hsection.addr); /* not in memory */
         assert!(hsection.align <= 1);
@@ -653,7 +578,7 @@ impl ElfFile {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 let h = self.header;
                 write!(f, "type:   {}", h.type_)?;
-                if h.type_.0 == SegmentType::INTERP {
+                if h.type_ == SegmentType::INTERP {
                     let mut buf = vec!(0u8; h.filesz.try_into().unwrap());
                     self.file.file.read_exact_at(&mut buf, h.offset).unwrap();
                     write!(f, " ({:?})", CStr::from_bytes_with_nul(&buf).expect("invalid interp section"))?;
@@ -708,7 +633,7 @@ impl ElfFile {
     }
 
     pub fn interp(&self) -> io::Result<Option<CString>> {
-        match self.program_headers.iter().find(|h| h.type_.0 == SegmentType::INTERP) {
+        match self.program_headers.iter().find(|h| h.type_ == SegmentType::INTERP) {
             None => Ok(None),
             Some(header) => {
                 let mut buf = vec!(0u8; header.filesz.try_into().unwrap());
@@ -721,7 +646,7 @@ impl ElfFile {
     pub fn string_table_sections(&self) -> impl Iterator<Item = StringTableSection> {
         self.section_headers.iter()
             .filter_map(|h| {
-                if h.type_.0 != SectionType::STRTAB {
+                if h.type_ != SectionType::STRTAB {
                     return None
                 }
 
