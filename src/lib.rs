@@ -556,17 +556,6 @@ use std::ffi::c_str::{CStr, CString};
 const SHN_UNDEF : u16 = 0;
 pub const SHN_LORESERVE : u16 = 0xff00;
 
-#[derive(Debug)]
-struct StringError<'a>(&'a str);
-
-impl Display for StringError<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
-impl Error for StringError<'_> {}
-
 const SIZE: u64 = 32768;
 
 impl ElfFile {
@@ -575,7 +564,7 @@ impl ElfFile {
 
         f.read_exact_at(&mut buf, 0)?;
 
-        ElfHeader::parse(&buf).map_err(|s| Box::new(StringError(s)) as Box<dyn Error>)
+        ElfHeader::parse(&buf).map_err(|s| s.into())
     }
 
     pub fn from_file(file: File) -> Result<ElfFile, Box<dyn Error>> {
