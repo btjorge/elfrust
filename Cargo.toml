@@ -5,8 +5,8 @@ edition = "2024"
 license = "MIT OR Apache-2.0"
 
 [dependencies]
-bitflags = { version = "2.11.0", features = ["bytemuck"] }
-bytemuck = { version = "1.25.0", features = ["derive", "extern_crate_alloc"] }
+bitflags = { version = "2.13.2", features = ["bytemuck"] }
+bytemuck = { version = "1.25.2", features = ["derive", "extern_crate_alloc"] }
 pager = "0.16.1"
 static_assertions = "1.1.0"
 strum_macros = "0.27.2"
