@@ -2,15 +2,18 @@
 
 use std::borrow::Cow;
 use std::ops::{Bound, IntoBounds, RangeBounds};
-use std::{env, fs::File};
+use std::path::PathBuf;
+use std::fs::File;
 use std::error::Error;
 use elfrust::{self, ElfFile, ElfProgHeader, ElfSectionHeader};
+use clap::{Parser, Args};
 use tabled::Tabled;
 use tabled::grid::records::Records;
 use tabled::settings::{object::{Object, FirstRow}, Alignment};
 use tabled::{builder::Builder, settings::style::Style, Table};
 use tabled::grid::config::Entity;
 use pager::Pager;
+
 
 struct Columns<R: RangeBounds<usize>>(R);
 
@@ -87,45 +90,85 @@ fn print_strings(f: &ElfFile) {
     }
 }
 
+#[derive(Parser)]
+#[command(version, about)]
+struct Cli {
+    #[command(flatten)]
+    what: What,
+    file: PathBuf,
+}
+
+#[derive(Args)]
+#[group(required = true, multiple = true)]
+struct What {
+    /// Print ELF identification
+    #[arg(long)]
+    ident: bool,
+
+    /// Print ELF header
+    #[arg(long)]
+    header: bool,
+
+    /// Print interpreter
+    #[arg(long)]
+    interp: bool,
+
+    /// Print the program header as a table
+    #[arg(long)]
+    segments: bool,
+
+    /// Print the section header table
+    #[arg(long)]
+    sections: bool,
+
+    /// Print all the string tables
+    #[arg(long)]
+    strings: bool,
+
+    /// Print everything
+    #[arg(long)]
+    all: bool,
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
     Pager::with_pager("less -SF").setup();
 
-    let args: Vec<String> = env::args().collect();
+    let cli = Cli::parse();
 
-    if args.len() != 3 {
-        panic!("bad number of arguments");
+    let f = ElfFile::from_file(File::open(cli.file)?)?;
+
+    if cli.what.all {
+        println!("{}", f.header().e_ident);
+        println!("{}", f.header());
+        println!("{:?}", f.interp()?.unwrap());
+        print_segments(&f);
+        print_sections(&f);
+        print_strings(&f);
+        return Ok(())
     }
 
-    let f = File::open(&args[2])?;
+    if cli.what.ident {
+        println!("{}", f.header().e_ident)
+    }
 
-    match args[1].as_str() {
-        "ident" => println!("{}", ElfFile::read_elf_header(&f)?.e_ident),
-        "header" => println!("{}", ElfFile::read_elf_header(&f)?),
-        "interp" => println!("{:?}", ElfFile::from_file(f)?.interp()?.unwrap()),
+    if cli.what.header {
+        println!("{}", f.header());
+    }
 
-        "segments" => {
-            let f = ElfFile::from_file(f)?;
-            print_segments(&f)
-        },
+    if cli.what.interp {
+        println!("{:?}", f.interp()?.unwrap())
+    }
 
-        "sections" => {
-            let f = ElfFile::from_file(f)?;
-            print_sections(&f)
-        },
+    if cli.what.segments {
+        print_segments(&f)
+    }
 
-        "strings" => print_strings(&ElfFile::from_file(f)?),
+    if cli.what.sections {
+        print_sections(&f)
+    }
 
-        "all" => {
-            let f = ElfFile::from_file(f)?;
-            println!("{}", f.header().e_ident);
-            println!("{}", f.header());
-            println!("{:?}", f.interp()?.unwrap());
-            print_segments(&f);
-            print_sections(&f);
-            print_strings(&f)
-        }
-
-        _ => panic!("unknown command"),
+    if cli.what.strings {
+        print_strings(&f)
     }
 
     Ok(())
